@@ -1,6 +1,6 @@
 # mundwerk
 
-##Aussprache-App für Deutsch Lernende und Lehrende
+## Aussprache-App für Deutsch Lernende und Lehrende
 
 Unser Ziel ist die Erstellung eines interaktiven Web-Tools zur Erlernung der deutschen Standardaussprache. 
 
