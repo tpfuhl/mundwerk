@@ -43,6 +43,15 @@ if not DEBUG:   # Produktion läuft ausschließlich über https
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
 
+# Fehler-Tracebacks immer nach stderr — unter mod_wsgi landet das im
+# Apache-Error-Log (Djangos Default verschluckt sie bei DEBUG=0).
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {'console': {'class': 'logging.StreamHandler'}},
+    'root': {'handlers': ['console'], 'level': 'WARNING'},
+}
+
 
 # Application definition
 
