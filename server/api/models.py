@@ -43,6 +43,18 @@ class TargetSegment(models.Model):
         return f"/{self.phone}/ ({self.speaker})"
 
 
+class LearnerProfile(models.Model):
+    """Zusatzdaten zum Django-User. Die Muttersprache (ISO 639-1) steuert
+    später die L1-spezifischen Übungspfade und Fehlerhypothesen."""
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                                related_name="learner_profile")
+    native_language = models.CharField(max_length=2)  # z. B. "fr", "en", "it"
+
+    def __str__(self):
+        return f"{self.user.username} ({self.native_language})"
+
+
 class Recording(models.Model):
     """Eine Nutzeraufnahme mit Analyseergebnis."""
 

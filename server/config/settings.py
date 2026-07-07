@@ -162,4 +162,6 @@ REST_FRAMEWORK = {
         # kann die API bequem im Browser erkunden (DRF Browsable API).
         'rest_framework.authentication.SessionAuthentication',
     ],
+    # Spam-Bremse für die offene Registrierung (pro IP)
+    'DEFAULT_THROTTLE_RATES': {'register': '10/hour'},
 }

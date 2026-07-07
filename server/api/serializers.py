@@ -1,6 +1,21 @@
+from django.contrib.auth.models import User
 from rest_framework import serializers
 
 from .models import Item, Recording
+
+
+class RegisterSerializer(serializers.Serializer):
+    vorname = serializers.CharField(max_length=150)
+    nachname = serializers.CharField(max_length=150)
+    nickname = serializers.CharField(max_length=150)
+    muttersprache = serializers.RegexField(
+        r"^[A-Za-z]{2}$",
+        error_messages={"invalid": "Muttersprache als ISO-639-1-Code angeben, z. B. fr, en, it."})
+
+    def validate_nickname(self, value):
+        if User.objects.filter(username__iexact=value).exists():
+            raise serializers.ValidationError("Dieser Nickname ist schon vergeben.")
+        return value
 
 
 class ItemSerializer(serializers.ModelSerializer):

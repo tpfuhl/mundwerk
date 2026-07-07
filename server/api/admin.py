@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from .models import Item, Recording, TargetSegment
+from .models import Item, LearnerProfile, Recording, TargetSegment
+
+
+@admin.register(LearnerProfile)
+class LearnerProfileAdmin(admin.ModelAdmin):
+    list_display = ("user", "native_language")
+    list_filter = ("native_language",)
 
 
 @admin.register(Item)

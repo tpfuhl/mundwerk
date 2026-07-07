@@ -10,6 +10,7 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
@@ -63,11 +64,29 @@ data class PhoneStatDto(
 
 data class ProfileDto(
     val username: String,
+    val vorname: String?,
+    val nachname: String?,
+    val muttersprache: String?,
     val uebungen_gesamt: Int,
     val phones: List<PhoneStatDto>,
 )
 
+data class RegisterRequest(
+    val vorname: String,
+    val nachname: String,
+    val nickname: String,
+    val muttersprache: String,   // ISO 639-1, z. B. "fr"
+)
+
+data class RegisterResponse(
+    val token: String,
+    val nickname: String,
+)
+
 interface MundwerkApi {
+
+    @POST("api/register/")
+    suspend fun register(@Body body: RegisterRequest): RegisterResponse
 
     @GET("api/items/")
     suspend fun items(@Query("level") level: String? = null): List<ItemDto>
@@ -92,15 +111,19 @@ interface MundwerkApi {
         // const val BASE_URL = "http://10.0.2.2:8000/"   // Emulator → Host
         // (Cleartext-Freigabe dafür liegt in res/xml/network_security_config.xml)
 
-        fun create(baseUrl: String = BASE_URL): MundwerkApi {
-            // Token kommt aus local.properties (mundwerk.apiToken) über die
-            // BuildConfig — fehlt er, gehen die Requests ohne Auth raus und
-            // der Server antwortet mit 401.
+        fun create(baseUrl: String = BASE_URL,
+                   tokenProvider: () -> String? = { BuildConfig.API_TOKEN }): MundwerkApi {
+            // Der Token kommt pro Request vom tokenProvider (TokenStore:
+            // BuildConfig-Token für Entwickler-Builds, sonst der bei der
+            // Registrierung gespeicherte). Ohne Token — z. B. beim
+            // Registrierungs-Request selbst — geht der Request ohne
+            // Authorization-Header raus.
             val client = OkHttpClient.Builder()
                 .addInterceptor { chain ->
-                    val request = if (BuildConfig.API_TOKEN.isNotEmpty()) {
+                    val token = tokenProvider()
+                    val request = if (!token.isNullOrEmpty()) {
                         chain.request().newBuilder()
-                            .header("Authorization", "Token ${BuildConfig.API_TOKEN}")
+                            .header("Authorization", "Token $token")
                             .build()
                     } else chain.request()
                     chain.proceed(request)

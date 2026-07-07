@@ -8,6 +8,8 @@ import eu.proportiodivina.mundwerk.data.ItemDto
 import eu.proportiodivina.mundwerk.data.MundwerkApi
 import eu.proportiodivina.mundwerk.data.ProfileDto
 import eu.proportiodivina.mundwerk.data.RecordingDto
+import eu.proportiodivina.mundwerk.data.RegisterRequest
+import eu.proportiodivina.mundwerk.data.TokenStore
 import eu.proportiodivina.mundwerk.data.uploadWav
 import kotlinx.coroutines.async
 import java.io.File
@@ -27,6 +29,10 @@ data class UiState(
     val phase: Phase = Phase.LOADING,
     val result: RecordingDto? = null,
     val error: String? = null,
+    // Registrierung (erster App-Start ohne Token)
+    val needsRegistration: Boolean = false,
+    val registering: Boolean = false,
+    val registerError: String? = null,
     // Verlaufs-Screen
     val showHistory: Boolean = false,
     val historyLoading: Boolean = false,
@@ -39,15 +45,52 @@ data class UiState(
 
 class MundwerkViewModel(app: Application) : AndroidViewModel(app) {
 
-    private val api = MundwerkApi.create()
+    private val tokenStore = TokenStore(app)
+    private val api = MundwerkApi.create(tokenProvider = { tokenStore.token })
     private val recorder = WavRecorder()
 
     private val _state = MutableStateFlow(UiState())
     val state = _state.asStateFlow()
 
     init {
-        loadItems()
+        if (tokenStore.token.isNullOrEmpty()) {
+            _state.update { it.copy(needsRegistration = true, phase = Phase.READY) }
+        } else {
+            loadItems()
+        }
     }
+
+    fun register(vorname: String, nachname: String, nickname: String,
+                 muttersprache: String) {
+        _state.update { it.copy(registering = true, registerError = null) }
+        viewModelScope.launch {
+            runCatching {
+                api.register(RegisterRequest(vorname.trim(), nachname.trim(),
+                                             nickname.trim(), muttersprache))
+            }
+                .onSuccess { response ->
+                    tokenStore.save(response.token)
+                    _state.update { it.copy(needsRegistration = false,
+                                            registering = false) }
+                    loadItems()
+                }
+                .onFailure { e ->
+                    _state.update { it.copy(registering = false,
+                                            registerError = registerErrorText(e)) }
+                }
+        }
+    }
+
+    private fun registerErrorText(e: Throwable): String =
+        if (e is retrofit2.HttpException) {
+            val body = e.response()?.errorBody()?.string().orEmpty()
+            when {
+                "vergeben" in body -> "Dieser Nickname ist schon vergeben."
+                "ISO" in body -> "Bitte eine Muttersprache auswählen."
+                e.code() == 429 -> "Zu viele Versuche — bitte später erneut."
+                else -> "Registrierung fehlgeschlagen (${e.code()})."
+            }
+        } else "Server nicht erreichbar: ${e.message}"
 
     fun loadItems() {
         _state.update { it.copy(phase = Phase.LOADING, error = null) }

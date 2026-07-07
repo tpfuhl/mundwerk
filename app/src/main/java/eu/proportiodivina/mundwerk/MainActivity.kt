@@ -52,6 +52,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import eu.proportiodivina.mundwerk.data.SegmentResultDto
 import eu.proportiodivina.mundwerk.ui.HistoryScreen
+import eu.proportiodivina.mundwerk.ui.RegistrationScreen
 import eu.proportiodivina.mundwerk.ui.ratingColor
 import eu.proportiodivina.mundwerk.ui.theme.MundwerkTheme
 
@@ -76,6 +77,16 @@ fun PracticeScreen(modifier: Modifier = Modifier, vm: MundwerkViewModel = viewMo
     val micPermission = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted -> if (granted) vm.toggleRecording() }
+
+    if (state.needsRegistration) {
+        RegistrationScreen(
+            registering = state.registering,
+            error = state.registerError,
+            onRegister = vm::register,
+            modifier = modifier,
+        )
+        return
+    }
 
     if (state.showHistory) {
         HistoryScreen(
