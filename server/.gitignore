@@ -1,0 +1,5 @@
+.venv/
+validation/test_audio/
+__pycache__/
+db.sqlite3
+media/
