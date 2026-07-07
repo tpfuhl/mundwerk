@@ -78,11 +78,11 @@ fun HistoryScreen(
                     Column(Modifier.padding(16.dp),
                            verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row {
-                            Text("Laut", Modifier.weight(1f), fontWeight = FontWeight.Bold)
-                            Text("Versuche", Modifier.weight(1f), fontWeight = FontWeight.Bold)
-                            Text("Ø Abstand", Modifier.weight(1f), fontWeight = FontWeight.Bold)
-                            Text("Beste", Modifier.weight(1f), fontWeight = FontWeight.Bold)
-                            Text("Zuletzt", Modifier.weight(1f), fontWeight = FontWeight.Bold)
+                            listOf("Laut", "Versuche", "Ø Abstand", "Beste", "Zuletzt").forEach {
+                                Text(it, Modifier.weight(1f), maxLines = 1,
+                                     fontWeight = FontWeight.Bold,
+                                     style = MaterialTheme.typography.labelMedium)
+                            }
                         }
                         HorizontalDivider()
                         p.phones.forEach { s ->
