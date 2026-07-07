@@ -24,32 +24,9 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import parselmouth
-from parselmouth.praat import call
-
+from analysis.alignment import segments_from_textgrid
 from analysis.pipeline import AnalysisError, analyze_recording
 from analysis.reference_formants import TARGETS
-
-
-def segments_from_textgrid(path: str, phones: set[str]) -> list[tuple[str, float, float]]:
-    """Vokal-Intervalle aus einem TextGrid (z. B. MFA-Output, Tier 'phones')."""
-    tg = parselmouth.read(path)
-    n_tiers = call(tg, "Get number of tiers")
-    tier = None
-    for i in range(1, n_tiers + 1):
-        if call(tg, "Get tier name", i).lower() in ("phones", "phone", "segments"):
-            tier = i
-            break
-    if tier is None:
-        tier = n_tiers  # MFA: letzter Tier ist üblicherweise 'phones'
-    out = []
-    for i in range(1, call(tg, "Get number of intervals", tier) + 1):
-        label = call(tg, "Get label of interval", tier, i).strip()
-        if label in phones:
-            out.append((label,
-                        call(tg, "Get start time of interval", tier, i),
-                        call(tg, "Get end time of interval", tier, i)))
-    return out
 
 
 def main() -> None:
@@ -65,7 +42,8 @@ def main() -> None:
     args = ap.parse_args()
 
     if args.textgrid:
-        segments = segments_from_textgrid(args.textgrid, set(TARGETS))
+        segments = [s for s in segments_from_textgrid(args.textgrid)
+                    if s[0] in TARGETS]
         if not segments:
             sys.exit("Kein bekannter Vokal im TextGrid gefunden.")
     elif args.start is not None and args.end is not None:

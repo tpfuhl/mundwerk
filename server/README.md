@@ -66,11 +66,12 @@ noch keine Referenzwerte (TargetSegment) hat.
 
 ## Stand / bewusste Vereinfachungen
 
-- **Segmentierung:** ohne MFA wird der längste stimmhafte Abschnitt
-  gemessen → Items sind vokal-dominante Einsilber. MFA-Integration
-  (Forced Alignment für beliebige Wörter/Sätze) ist der nächste
-  Serverschritt; die Analyse wandert dann in einen Celery-Task
-  (POST → 202 + Polling).
+- **Segmentierung:** Forced Alignment per MFA (`MFA_BIN` in `.env`;
+  conda-Env `mfa`, Modelle `german_mfa`). Liefert das Alignment den
+  Fokus-Laut nicht (oder ist MFA aus), greift die Auto-Segmentierung
+  (längster stimmhafter Abschnitt); `result.segments[].segmentierung`
+  sagt, welcher Weg es war. Aufnahme+Analyse dauern damit ~8 s —
+  wenn das stört: Celery-Task (POST → 202 + Polling).
 - **Sprechernormalisierung:** nur male/female/child-Tabellen; Lobanov-
   Kalibrierung beim Onboarding kommt in Phase 1.
 - **Auth:** Token-Pflicht auf allen Endpoints
