@@ -117,11 +117,11 @@ formants = snd.to_formant_burg(max_number_of_formants=5,
     prune_audio` per Cron. Das ist zugleich das DSGVO-Löschkonzept.
   - Profil/Verlauf: `GET /api/profile/` (Übungszähler, Ø-Distanz pro
     Vokal) + Verlaufs-Screen in der App; Audio bleibt lokal auf dem Gerät.
-  - Registrierung statt einkompiliertem Token: App legt beim ersten Start
-    ein Konto an (`POST /api/register/`, anonym möglich), erhält ihren
-    persönlichen Token und speichert ihn verschlüsselt
-    (EncryptedSharedPreferences). Ein Token pro User ist der Normalfall
-    und skaliert problemlos — nur die manuelle Vergabe tut es nicht.
+  - ✅ Registrierung statt einkompiliertem Token: Registrierungs-Screen
+    beim ersten Start (Vorname, Nachname, Nickname, Muttersprache
+    ISO 639-1) → `POST /api/register/` → Token wird app-privat
+    gespeichert. Ein Token pro User ist der Normalfall und skaliert
+    problemlos — nur die manuelle Vergabe tat es nicht.
   - Wortlisten-Pipeline: CSV-Import (`manage.py import_items`), Kuratierung
     im Admin durch Kirsten (Minimalpaare, Niveaus, L1-Bezug).
 - **Phase 2:** Kurzvokale, Umlaut-Minimalpaare, Vokalviereck-Visualisierung
