@@ -115,7 +115,7 @@ formants = snd.to_formant_burg(max_number_of_formants=5,
     bleibt); Ausnahme Gruppe „korpus“ (Einwilligung zur Aufbewahrung für
     die Referenzwert-Kalibrierung). Sicherheitsnetz: `manage.py
     prune_audio` per Cron. Das ist zugleich das DSGVO-Löschkonzept.
-  - Profil/Verlauf: `GET /api/profile/` (Übungszähler, Ø-Distanz pro
+  - ✅ Profil/Verlauf: `GET /api/profile/` (Übungszähler, Ø-Distanz pro
     Vokal) + Verlaufs-Screen in der App; Audio bleibt lokal auf dem Gerät.
   - ✅ Registrierung statt einkompiliertem Token: Registrierungs-Screen
     beim ersten Start (Vorname, Nachname, Nickname, Muttersprache
