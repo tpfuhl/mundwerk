@@ -122,8 +122,9 @@ formants = snd.to_formant_burg(max_number_of_formants=5,
     ISO 639-1) → `POST /api/register/` → Token wird app-privat
     gespeichert. Ein Token pro User ist der Normalfall und skaliert
     problemlos — nur die manuelle Vergabe tat es nicht.
-  - Wortlisten-Pipeline: CSV-Import (`manage.py import_items`), Kuratierung
-    im Admin durch Kirsten (Minimalpaare, Niveaus, L1-Bezug).
+  - ✅ Wortlisten-Pipeline: CSV-Import (`manage.py import_items`, erkennt
+    Komma/Semikolon, aktualisiert statt dupliziert), Kuratierung im Admin
+    durch Kirsten (Minimalpaare, Niveaus, L1-Bezug).
 - **Phase 2:** Kurzvokale, Umlaut-Minimalpaare, Vokalviereck-Visualisierung
   (Ist vs. Soll als Punkt im F1/F2-Raum).
 - **Phase 3:** Konsonanten — Formanten reichen nicht: Frikative brauchen

@@ -48,6 +48,22 @@ Antwort (`result.segments[]`): pro Fokus-Phone `f1/f2` (gemessen),
 `target_f1/f2`, `z_f1/z_f2`, `distanz`, `rating` (grün/gelb/rot),
 `feedback` (artikulatorische Hinweise), `start/end` (Segment in s).
 
+## Wortlisten pflegen (Kirsten)
+
+Zwei Wege: einzeln im Django-Admin (Items), oder gesammelt per CSV:
+
+```bash
+.venv/bin/python manage.py import_items wortliste.csv --dry-run   # erst prüfen
+.venv/bin/python manage.py import_items wortliste.csv
+```
+
+CSV-Spalten: `text, ipa, level, focus` (focus = Fokus-Laute in IPA,
+mehrere durch Leerzeichen). Komma- oder Semikolon-getrennt (deutsches
+Excel/LibreOffice funktioniert direkt). Vorhandene Wörter (gleicher
+`text`) werden aktualisiert, nicht dupliziert. Vorlage:
+`data/beispiel_wortliste.csv`. Der Import warnt, wenn ein Fokus-Laut
+noch keine Referenzwerte (TargetSegment) hat.
+
 ## Stand / bewusste Vereinfachungen
 
 - **Segmentierung:** ohne MFA wird der längste stimmhafte Abschnitt
