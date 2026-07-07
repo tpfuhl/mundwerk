@@ -109,6 +109,21 @@ formants = snd.to_formant_burg(max_number_of_formants=5,
   Feste Wortliste, Kalibrierung, Ampel-Rating + ein Hinweissatz.
   Android: Aufnahme (AudioRecord, 16 kHz mono WAV), Upload (Retrofit),
   Feedback-Screen. Django-Backend mit obigem Datenmodell.
+- **Phase 1b — Nutzer & Daten** *(eingeschoben nach dem Deployment)*:
+  - ✅ Privacy: jeder API-User sieht nur eigene Aufnahmen.
+  - ✅ Audio-Lebenszyklus: Upload wird nach der Analyse gelöscht (Ergebnis
+    bleibt); Ausnahme Gruppe „korpus“ (Einwilligung zur Aufbewahrung für
+    die Referenzwert-Kalibrierung). Sicherheitsnetz: `manage.py
+    prune_audio` per Cron. Das ist zugleich das DSGVO-Löschkonzept.
+  - Profil/Verlauf: `GET /api/profile/` (Übungszähler, Ø-Distanz pro
+    Vokal) + Verlaufs-Screen in der App; Audio bleibt lokal auf dem Gerät.
+  - Registrierung statt einkompiliertem Token: App legt beim ersten Start
+    ein Konto an (`POST /api/register/`, anonym möglich), erhält ihren
+    persönlichen Token und speichert ihn verschlüsselt
+    (EncryptedSharedPreferences). Ein Token pro User ist der Normalfall
+    und skaliert problemlos — nur die manuelle Vergabe tut es nicht.
+  - Wortlisten-Pipeline: CSV-Import (`manage.py import_items`), Kuratierung
+    im Admin durch Kirsten (Minimalpaare, Niveaus, L1-Bezug).
 - **Phase 2:** Kurzvokale, Umlaut-Minimalpaare, Vokalviereck-Visualisierung
   (Ist vs. Soll als Punkt im F1/F2-Raum).
 - **Phase 3:** Konsonanten — Formanten reichen nicht: Frikative brauchen

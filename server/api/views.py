@@ -29,8 +29,12 @@ class RecordingViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin,
     wird sie in einen Celery-Task ausgelagert und POST antwortet mit 202.
     """
 
-    queryset = Recording.objects.all().order_by("-created_at")
     serializer_class = RecordingSerializer
+
+    def get_queryset(self):
+        # Jeder sieht ausschließlich seine eigenen Aufnahmen.
+        return (Recording.objects.filter(user=self.request.user)
+                .order_by("-created_at"))
 
     def perform_create(self, serializer):
         recording = serializer.save(user=self.request.user)
@@ -52,3 +56,11 @@ class RecordingViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin,
             recording.result = {"error": str(e)}
             recording.status = "error"
         recording.save(update_fields=["result", "status"])
+        # Audio-Lebenszyklus: Datei wird sofort nach der Analyse gelöscht,
+        # das Ergebnis-JSON bleibt. Ausnahme: Mitglieder der Gruppe
+        # "korpus" haben zugestimmt, dass ihre Aufnahmen für die
+        # Kalibrierung der Referenzwerte aufbewahrt werden.
+        keep = (recording.user is not None
+                and recording.user.groups.filter(name="korpus").exists())
+        if not keep:
+            recording.audio.delete(save=True)

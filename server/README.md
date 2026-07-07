@@ -66,3 +66,9 @@ Antwort (`result.segments[]`): pro Fokus-Phone `f1/f2` (gemessen),
 - **Referenzwerte:** Literatur-Startwerte, per Seed-Migration in die DB
   übernommen und im Admin kuratierbar. `analysis/reference_formants.py`
   ist danach nur noch Fallback/Seed-Quelle.
+- **Audio-Lebenszyklus:** hochgeladene Aufnahmen werden direkt nach der
+  Analyse gelöscht (das Ergebnis-JSON bleibt). Ausnahme: User in der
+  Gruppe „korpus“ (Einwilligung, z. B. Team) — deren Audio bleibt für
+  die Referenzwert-Kalibrierung. Sicherheitsnetz per Cron:
+  `manage.py prune_audio --days 30`. Jeder User sieht über die API nur
+  seine eigenen Aufnahmen.
