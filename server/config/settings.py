@@ -158,5 +158,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
+        # Zusätzlich Session-Auth: wer im Django-Admin eingeloggt ist,
+        # kann die API bequem im Browser erkunden (DRF Browsable API).
+        'rest_framework.authentication.SessionAuthentication',
     ],
 }
