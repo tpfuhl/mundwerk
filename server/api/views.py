@@ -33,8 +33,7 @@ class RecordingViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin,
     serializer_class = RecordingSerializer
 
     def perform_create(self, serializer):
-        recording = serializer.save(
-            user=self.request.user if self.request.user.is_authenticated else None)
+        recording = serializer.save(user=self.request.user)
         self._analyze(recording)
 
     @staticmethod

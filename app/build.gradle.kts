@@ -19,6 +19,15 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // API-Token aus local.properties (gitignored, nicht im Repo):
+        //   mundwerk.apiToken=<Token aus Django-Admin bzw. drf_create_token>
+        val props = java.util.Properties().apply {
+            val f = rootProject.file("local.properties")
+            if (f.exists()) f.inputStream().use { load(it) }
+        }
+        buildConfigField("String", "API_TOKEN",
+            "\"${props.getProperty("mundwerk.apiToken") ?: ""}\"")
     }
 
     buildTypes {
@@ -34,6 +43,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

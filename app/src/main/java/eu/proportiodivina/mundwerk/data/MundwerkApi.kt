@@ -1,8 +1,10 @@
 package eu.proportiodivina.mundwerk.data
 
+import eu.proportiodivina.mundwerk.BuildConfig
 import java.io.File
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -68,12 +70,27 @@ interface MundwerkApi {
         // const val BASE_URL = "http://10.0.2.2:8000/"   // Emulator → Host
         // (Cleartext-Freigabe dafür liegt in res/xml/network_security_config.xml)
 
-        fun create(baseUrl: String = BASE_URL): MundwerkApi =
-            Retrofit.Builder()
+        fun create(baseUrl: String = BASE_URL): MundwerkApi {
+            // Token kommt aus local.properties (mundwerk.apiToken) über die
+            // BuildConfig — fehlt er, gehen die Requests ohne Auth raus und
+            // der Server antwortet mit 401.
+            val client = OkHttpClient.Builder()
+                .addInterceptor { chain ->
+                    val request = if (BuildConfig.API_TOKEN.isNotEmpty()) {
+                        chain.request().newBuilder()
+                            .header("Authorization", "Token ${BuildConfig.API_TOKEN}")
+                            .build()
+                    } else chain.request()
+                    chain.proceed(request)
+                }
+                .build()
+            return Retrofit.Builder()
                 .baseUrl(baseUrl)
+                .client(client)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
                 .create(MundwerkApi::class.java)
+        }
     }
 }
 
