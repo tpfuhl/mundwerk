@@ -125,6 +125,19 @@ formants = snd.to_formant_burg(max_number_of_formants=5,
   - ✅ Wortlisten-Pipeline: CSV-Import (`manage.py import_items`, erkennt
     Komma/Semikolon, aktualisiert statt dupliziert), Kuratierung im Admin
     durch Kirsten (Minimalpaare, Niveaus, L1-Bezug).
+### Nächste Schritte (Stand Juli 2026, in dieser Reihenfolge)
+
+1. **Referenzwert-Validierung mit echten Stimmen** *(kein Code — Thomas &
+   Kirsten)*: alle Wörter in der App sprechen, gut und absichtlich falsch;
+   TargetSegments im Admin justieren, wo die Literaturwerte danebenliegen.
+   Wichtigster fachlicher Schritt — alles Weitere baut darauf.
+2. **MFA-Integration** *(in Arbeit)*: Forced Alignment mit dem Montreal
+   Forced Aligner → beliebige Wörter statt vokal-dominanter Einsilber.
+   Fallback bleibt die bisherige Auto-Segmentierung; Celery/Redis erst,
+   wenn die synchrone Analyse zu langsam wird.
+3. **Vokalviereck-Visualisierung** in der App: Ist vs. Soll als Punkt im
+   F1/F2-Raum — anschaulichstes Feedback für Lerner.
+
 - **Phase 2:** Kurzvokale, Umlaut-Minimalpaare, Vokalviereck-Visualisierung
   (Ist vs. Soll als Punkt im F1/F2-Raum).
 - **Phase 3:** Konsonanten — Formanten reichen nicht: Frikative brauchen

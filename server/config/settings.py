@@ -148,6 +148,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'   # Ziel von collectstatic (Apache-Alias)
 
+# Forced Alignment (Montreal Forced Aligner). MFA_BIN = absoluter Pfad
+# zum mfa-Binary in seiner conda-Umgebung (per .env gesetzt); leer =
+# Alignment aus, Analyse fällt auf die Auto-Segmentierung zurück.
+MFA_BIN = os.environ.get('MFA_BIN', '')
+MFA_TIMEOUT = int(os.environ.get('MFA_TIMEOUT', '120'))
+
 # Hochgeladene Aufnahmen (Entwicklung: lokales Verzeichnis)
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'

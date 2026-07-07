@@ -1,3 +1,6 @@
+import logging
+
+from django.conf import settings
 from django.contrib.auth.models import User
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.authtoken.models import Token
@@ -5,10 +8,13 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
+from analysis.alignment import AlignmentError, align
 from analysis.pipeline import AnalysisError, analyze_recording
 
 from .models import Item, LearnerProfile, Recording, TargetSegment
 from .serializers import ItemSerializer, RecordingSerializer, RegisterSerializer
+
+logger = logging.getLogger(__name__)
 
 
 class ItemViewSet(viewsets.ReadOnlyModelViewSet):
@@ -46,15 +52,37 @@ class RecordingViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin,
         self._analyze(recording)
 
     @staticmethod
-    def _analyze(recording):
+    def _align(recording):
+        """Phon-Segmente per MFA; {} wenn MFA aus ist oder scheitert
+        (dann greift die Auto-Segmentierung der Pipeline)."""
+        if not settings.MFA_BIN:
+            return {}
+        try:
+            aligned = align(recording.audio.path, recording.item.text,
+                            settings.MFA_BIN, timeout=settings.MFA_TIMEOUT)
+        except AlignmentError as e:
+            logger.warning("Alignment-Fallback für Recording %s: %s",
+                           recording.pk, e)
+            return {}
+        by_phone = {}
+        for phone, start, end in aligned:
+            by_phone.setdefault(phone, (start, end))  # erstes Vorkommen
+        return by_phone
+
+    @classmethod
+    def _analyze(cls, recording):
         results = []
         try:
+            aligned = cls._align(recording)
             for phone in recording.item.focus_segments:
                 target = TargetSegment.objects.filter(
                     phone=phone, speaker=recording.speaker).first()
-                results.append(analyze_recording(
+                result = analyze_recording(
                     recording.audio.path, phone, recording.speaker,
-                    target=target.as_tuple() if target else None))
+                    target=target.as_tuple() if target else None,
+                    segment=aligned.get(phone))
+                result["segmentierung"] = "mfa" if phone in aligned else "auto"
+                results.append(result)
             recording.result = {"segments": results}
             recording.status = "done"
         except AnalysisError as e:
