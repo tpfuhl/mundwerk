@@ -136,8 +136,10 @@ formants = snd.to_formant_burg(max_number_of_formants=5,
    beliebige Wörter statt vokal-dominanter Einsilber. Fallback bleibt
    die Auto-Segmentierung (result: segmentierung mfa|auto). ~8 s pro
    Aufnahme synchron; Celery/Redis erst, wenn das zu langsam wird.
-3. **Vokalviereck-Visualisierung** in der App: Ist vs. Soll als Punkt im
-   F1/F2-Raum — anschaulichstes Feedback für Lerner.
+3. ✅ **Vokalviereck-Visualisierung** in der App: alle Referenzvokale,
+   1-SD-Zielzone, eigene Produktion mit Linie zum Ziel; Achsen in
+   Phonetik-Konvention. Referenzpunkte kommen aus /api/targets/ (DB) —
+   Kirstens Admin-Justierungen wirken direkt.
 
 - **Phase 2:** Kurzvokale, Umlaut-Minimalpaare, Vokalviereck-Visualisierung
   (Ist vs. Soll als Punkt im F1/F2-Raum).

@@ -51,6 +51,7 @@ class MundwerkViewModel(app: Application) : AndroidViewModel(app) {
     private val tokenStore = TokenStore(app)
     private val api = MundwerkApi.create(tokenProvider = { tokenStore.token })
     private val recorder = WavRecorder()
+    private val targetCache = mutableMapOf<String, List<TargetDto>>()
 
     private val _state = MutableStateFlow(UiState())
     val state = _state.asStateFlow()
@@ -111,8 +112,6 @@ class MundwerkViewModel(app: Application) : AndroidViewModel(app) {
         }
         loadTargets(_state.value.speaker)
     }
-
-    private val targetCache = mutableMapOf<String, List<TargetDto>>()
 
     private fun loadTargets(speaker: String) {
         targetCache[speaker]?.let { cached ->
