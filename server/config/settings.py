@@ -10,23 +10,38 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
+# Optionale .env neben manage.py (KEY=VALUE pro Zeile). Auf dem Server
+# liegen dort DJANGO_SECRET_KEY und DJANGO_DEBUG=0; lokal existiert die
+# Datei nicht und die Entwicklungs-Defaults unten greifen.
+_env_file = BASE_DIR / '.env'
+if _env_file.exists():
+    for _line in _env_file.read_text().splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith('#') and '=' in _line:
+            _key, _value = _line.split('=', 1)
+            os.environ.setdefault(_key.strip(), _value.strip())
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-&nmwi69576s6a&^gprz&o$ertx)idz(xy!zun(8(tu08kay)q^'
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-&nmwi69576s6a&^gprz&o$ertx)idz(xy!zun(8(tu08kay)q^')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', '1') == '1'
 
 # 10.0.2.2 = Host-Rechner aus Sicht des Android-Emulators
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '10.0.2.2']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '10.0.2.2',
+                 'mundwerk.proportiodivina.eu']
+
+if not DEBUG:   # Produktion läuft ausschließlich über https
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 
 # Application definition
@@ -118,6 +133,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'   # Ziel von collectstatic (Apache-Alias)
 
 # Hochgeladene Aufnahmen (Entwicklung: lokales Verzeichnis)
 MEDIA_URL = 'media/'
