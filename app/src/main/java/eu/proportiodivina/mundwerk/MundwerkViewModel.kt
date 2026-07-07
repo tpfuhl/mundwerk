@@ -6,8 +6,10 @@ import androidx.lifecycle.viewModelScope
 import eu.proportiodivina.mundwerk.audio.WavRecorder
 import eu.proportiodivina.mundwerk.data.ItemDto
 import eu.proportiodivina.mundwerk.data.MundwerkApi
+import eu.proportiodivina.mundwerk.data.ProfileDto
 import eu.proportiodivina.mundwerk.data.RecordingDto
 import eu.proportiodivina.mundwerk.data.uploadWav
+import kotlinx.coroutines.async
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +27,12 @@ data class UiState(
     val phase: Phase = Phase.LOADING,
     val result: RecordingDto? = null,
     val error: String? = null,
+    // Verlaufs-Screen
+    val showHistory: Boolean = false,
+    val historyLoading: Boolean = false,
+    val profile: ProfileDto? = null,
+    val history: List<RecordingDto> = emptyList(),
+    val historyError: String? = null,
 ) {
     val currentItem: ItemDto? get() = items.getOrNull(index)
 }
@@ -69,6 +77,31 @@ class MundwerkViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setSpeaker(speaker: String) {
         _state.update { it.copy(speaker = speaker) }
+    }
+
+    fun openHistory() {
+        _state.update { it.copy(showHistory = true, historyLoading = true,
+                                historyError = null) }
+        viewModelScope.launch {
+            runCatching {
+                val profile = async { api.profile() }
+                val recordings = async { api.recordings() }
+                profile.await() to recordings.await()
+            }
+                .onSuccess { (profile, recordings) ->
+                    _state.update { it.copy(historyLoading = false,
+                                            profile = profile,
+                                            history = recordings) }
+                }
+                .onFailure { e ->
+                    _state.update { it.copy(historyLoading = false,
+                                            historyError = "Verlauf nicht ladbar: ${e.message}") }
+                }
+        }
+    }
+
+    fun closeHistory() {
+        _state.update { it.copy(showHistory = false) }
     }
 
     /** Ein Button: erster Druck startet die Aufnahme, zweiter stoppt + sendet. */

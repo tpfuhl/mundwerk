@@ -51,6 +51,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import eu.proportiodivina.mundwerk.data.SegmentResultDto
+import eu.proportiodivina.mundwerk.ui.HistoryScreen
+import eu.proportiodivina.mundwerk.ui.ratingColor
 import eu.proportiodivina.mundwerk.ui.theme.MundwerkTheme
 
 class MainActivity : ComponentActivity() {
@@ -74,6 +76,18 @@ fun PracticeScreen(modifier: Modifier = Modifier, vm: MundwerkViewModel = viewMo
     val micPermission = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted -> if (granted) vm.toggleRecording() }
+
+    if (state.showHistory) {
+        HistoryScreen(
+            loading = state.historyLoading,
+            profile = state.profile,
+            history = state.history,
+            error = state.historyError,
+            onBack = vm::closeHistory,
+            modifier = modifier,
+        )
+        return
+    }
 
     Column(
         modifier = modifier
@@ -142,6 +156,9 @@ fun PracticeScreen(modifier: Modifier = Modifier, vm: MundwerkViewModel = viewMo
             OutlinedButton(onClick = vm::nextItem,
                            enabled = state.phase == Phase.READY) { Text("Weiter →") }
         }
+
+        OutlinedButton(onClick = vm::openHistory,
+                       enabled = state.phase == Phase.READY) { Text("📈  Verlauf") }
     }
 }
 
@@ -210,13 +227,6 @@ private fun RecordButton(phase: Phase, onClick: () -> Unit) {
             else -> Text("🎤  Aufnehmen")
         }
     }
-}
-
-private fun ratingColor(rating: String?): Color = when (rating) {
-    "grün" -> Color(0xFF2E7D32)
-    "gelb" -> Color(0xFFF9A825)
-    "rot" -> Color(0xFFC62828)
-    else -> Color.Gray
 }
 
 @Composable

@@ -11,7 +11,7 @@ um Hör- bzw. Wahrnehmungsübungen handelt, sondern dem Lerner Funktionen zur Ko
 Darüber hinaus berücksichtigt die Zusammenstellung der Übungseinheiten die spezifischen Schwierigkeiten des jeweiligen Lerners 
 in Bezug auf seine Ausgangssprache.
 
-__@TODO__ needs correction
+__@TODO__ the following  paragraph needs correction
 
 __Mundwerk__ ist als WebApp konzipiert und mit einem MVC-Framework umgesetzt. Im benutzerfreundlichen und modernen Frontend können Nutzer Audiosequenzen aufnehmen, die an den Server geschickt und dort analysiert werden. Nutzer können sich einloggen, auf ihre History zurückgreifen, in Übungen wieder einsteigen, Übungen wiederholen, Fehlerquoten anzeigen lassen, etc.
 Das Backend ist datenbankgestützt. Gespeichert werden die Nutzerdaten und das Expertenwissen. Die hochgeladenen Audiodateien werden von linguistisch-phonetischen OpenSource-Programmen analysiert und verarbeitet. Das korrekte Modell und  die korrigierte Version der Eigenproduktion werden zurückgegeben, sowohl als Audiostream als auch als akustisch/artikulatorisch korrelierte Vektor-Grafik “Mund/Zunge/Öffnung”.

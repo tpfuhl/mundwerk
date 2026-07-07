@@ -1,4 +1,6 @@
 from rest_framework import mixins, viewsets
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from analysis.pipeline import AnalysisError, analyze_recording
 
@@ -64,3 +66,40 @@ class RecordingViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin,
                 and recording.user.groups.filter(name="korpus").exists())
         if not keep:
             recording.audio.delete(save=True)
+
+
+class ProfileView(APIView):
+    """GET /api/profile/ — Übungsstatistik des angemeldeten Users.
+
+    Aggregiert die Analyseergebnisse pro Vokal: Versuche, mittlere und
+    beste Distanz (in kombinierten Standardabweichungen), letztes Rating.
+    """
+
+    def get(self, request):
+        recordings = (Recording.objects
+                      .filter(user=request.user, status="done")
+                      .order_by("created_at"))
+        stats = {}
+        for recording in recordings:
+            for seg in (recording.result or {}).get("segments", []):
+                if seg.get("distanz") is None:
+                    continue
+                s = stats.setdefault(seg["phone"], {
+                    "phone": seg["phone"], "versuche": 0, "_summe": 0.0,
+                    "beste_distanz": None, "letztes_rating": None,
+                })
+                s["versuche"] += 1
+                s["_summe"] += seg["distanz"]
+                if s["beste_distanz"] is None or seg["distanz"] < s["beste_distanz"]:
+                    s["beste_distanz"] = seg["distanz"]
+                s["letztes_rating"] = seg.get("rating")
+        phones = []
+        for s in sorted(stats.values(), key=lambda s: s["phone"]):
+            summe = s.pop("_summe")
+            s["mittlere_distanz"] = round(summe / s["versuche"], 2)
+            phones.append(s)
+        return Response({
+            "username": request.user.username,
+            "uebungen_gesamt": recordings.count(),
+            "phones": phones,
+        })

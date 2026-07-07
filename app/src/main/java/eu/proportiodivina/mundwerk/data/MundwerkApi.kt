@@ -47,14 +47,36 @@ data class AnalysisResultDto(
 
 data class RecordingDto(
     val id: Int,
+    val item: ItemDto?,
     val status: String,        // "pending" | "done" | "error"
     val result: AnalysisResultDto?,
+    val created_at: String?,   // ISO-8601
+)
+
+data class PhoneStatDto(
+    val phone: String,
+    val versuche: Int,
+    val mittlere_distanz: Double,
+    val beste_distanz: Double,
+    val letztes_rating: String?,
+)
+
+data class ProfileDto(
+    val username: String,
+    val uebungen_gesamt: Int,
+    val phones: List<PhoneStatDto>,
 )
 
 interface MundwerkApi {
 
     @GET("api/items/")
     suspend fun items(@Query("level") level: String? = null): List<ItemDto>
+
+    @GET("api/profile/")
+    suspend fun profile(): ProfileDto
+
+    @GET("api/recordings/")
+    suspend fun recordings(): List<RecordingDto>
 
     @Multipart
     @POST("api/recordings/")
