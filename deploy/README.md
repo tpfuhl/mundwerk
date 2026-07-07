@@ -55,6 +55,25 @@ server/.venv/bin/python server/manage.py collectstatic --noinput
 touch server/config/wsgi.py     # WSGIScriptReloading lädt den Daemon neu
 ```
 
+## MFA (Forced Alignment) einrichten
+
+Einmalig auf dem Server (als thomas; ~3 GB unter ~/miniforge3):
+
+```bash
+curl -sL -o miniforge.sh https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
+bash miniforge.sh -b -p ~/miniforge3 && rm miniforge.sh
+~/miniforge3/bin/conda create -n mfa -c conda-forge montreal-forced-aligner -y
+export PATH=~/miniforge3/envs/mfa/bin:$PATH
+mfa model download acoustic german_mfa
+mfa model download dictionary german_mfa
+echo "MFA_BIN=/home/thomas/miniforge3/envs/mfa/bin/mfa" >> ~/mundwerk/server/.env
+touch ~/mundwerk/server/config/wsgi.py
+```
+
+Der erste Alignment-Lauf baut den Lexikon-Cache (~30 s), danach ~8 s pro
+Aufnahme. Ohne `MFA_BIN` in der `.env` läuft die Analyse weiter mit der
+Auto-Segmentierung (Fallback).
+
 ## Stolpersteine
 
 - **`WSGIApplicationGroup %{GLOBAL}` nicht entfernen** — parselmouth und
