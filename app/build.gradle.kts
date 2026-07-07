@@ -5,6 +5,18 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+// Version aus Git ableiten: versionCode = Commit-Anzahl (monoton steigend),
+// versionName = 1.0.<Anzahl>+<Kurzhash> — so ist jeder Build eindeutig
+// einem Commit zuzuordnen (wird unten im Übungsscreen angezeigt).
+// providers.exec ist configuration-cache-kompatibel.
+val gitCommitCount = providers.exec {
+    commandLine("git", "rev-list", "--count", "HEAD")
+}.standardOutput.asText.map { it.trim().toIntOrNull() ?: 1 }
+
+val gitShortHash = providers.exec {
+    commandLine("git", "rev-parse", "--short", "HEAD")
+}.standardOutput.asText.map { it.trim().ifEmpty { "nogit" } }
+
 android {
     namespace = "eu.proportiodivina.mundwerk"
     compileSdk {
@@ -17,8 +29,8 @@ android {
         applicationId = "eu.proportiodivina.mundwerk"
         minSdk = 34
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = gitCommitCount.get()
+        versionName = "1.0.${gitCommitCount.get()}+${gitShortHash.get()}"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

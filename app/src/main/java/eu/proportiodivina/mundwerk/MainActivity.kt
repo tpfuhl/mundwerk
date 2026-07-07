@@ -172,6 +172,10 @@ fun PracticeScreen(modifier: Modifier = Modifier, vm: MundwerkViewModel = viewMo
 
         OutlinedButton(onClick = vm::openHistory,
                        enabled = state.phase == Phase.READY) { Text("📈  Verlauf") }
+
+        Text("Version ${BuildConfig.VERSION_NAME}",
+             style = MaterialTheme.typography.labelSmall,
+             color = MaterialTheme.colorScheme.outline)
     }
 }
 
