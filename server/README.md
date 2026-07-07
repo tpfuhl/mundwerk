@@ -57,8 +57,12 @@ Antwort (`result.segments[]`): pro Fokus-Phone `f1/f2` (gemessen),
   (POST → 202 + Polling).
 - **Sprechernormalisierung:** nur male/female/child-Tabellen; Lobanov-
   Kalibrierung beim Onboarding kommt in Phase 1.
-- **Auth:** API ist offen (AllowAny) — vor jedem Deployment Token-Auth
-  aktivieren; Aufnahmen sind personenbezogene Daten (DSGVO, Löschkonzept).
+- **Auth:** Token-Pflicht auf allen Endpoints
+  (`Authorization: Token <key>`). Tokens pro Nutzer anlegen im Admin
+  (Auth Token → Tokens) oder per `manage.py drf_create_token <user>`.
+  Die App liest ihren Token aus `local.properties`
+  (`mundwerk.apiToken=…`). Offen bleibt: Löschkonzept für Aufnahmen
+  (DSGVO).
 - **Referenzwerte:** Literatur-Startwerte, per Seed-Migration in die DB
   übernommen und im Admin kuratierbar. `analysis/reference_formants.py`
   ist danach nur noch Fallback/Seed-Quelle.

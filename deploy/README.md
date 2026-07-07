@@ -68,9 +68,12 @@ touch server/config/wsgi.py     # WSGIScriptReloading lädt den Daemon neu
   `chgrp -R www-data server/media server/db.sqlite3 && chmod -R g+w …`
   Alternativ `user=thomas group=thomas` im WSGIDaemonProcess ergänzen
   (wie in der auskommentierten Zeile der arbeitsstunden-Config).
-- **API ist noch offen** (AllowAny): jeder kann Audio hochladen. Für den
-  Anfang tolerierbar, aber Token-Auth sollte der nächste Schritt nach dem
-  Deployment sein — spätestens bevor die App an Tester geht.
+- **Token-Auth**: alle Endpoints verlangen `Authorization: Token <key>`.
+  Neue Tokens (z. B. für Kirsten/Tester): auf dem Server
+  `manage.py drf_create_token <username>` (User vorher im Admin anlegen)
+  und beim Tester in `local.properties` als `mundwerk.apiToken=…`
+  eintragen. Voraussetzung im VHost: `WSGIPassAuthorization On` —
+  sonst verwirft Apache den Header und alles ist 401.
 - Android-App: `BASE_URL` in `MundwerkApi.kt` auf
   `https://mundwerk.proportiodivina.eu/` stellen (https → der
   Cleartext-Eintrag in network_security_config.xml wird nicht gebraucht).

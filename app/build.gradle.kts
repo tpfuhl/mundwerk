@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -22,10 +24,9 @@ android {
 
         // API-Token aus local.properties (gitignored, nicht im Repo):
         //   mundwerk.apiToken=<Token aus Django-Admin bzw. drf_create_token>
-        val props = java.util.Properties().apply {
-            val f = rootProject.file("local.properties")
-            if (f.exists()) f.inputStream().use { load(it) }
-        }
+        val props = Properties()
+        rootProject.file("local.properties").takeIf { it.exists() }
+            ?.inputStream()?.use { props.load(it) }
         buildConfigField("String", "API_TOKEN",
             "\"${props.getProperty("mundwerk.apiToken") ?: ""}\"")
     }
