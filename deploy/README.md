@@ -9,8 +9,14 @@ mod_wsgi-Daemon, Let's Encrypt. Annahme: Repo unter `/home/thomas/mundwerk`.
 # 1. DNS: A-Record für mundwerk.proportiodivina.eu auf die Server-IP
 
 # 2. Code + Umgebung
+# Das Repo ist privat (github.com/tpfuhl/mundwerk) — der Server braucht
+# einen Deploy-Key: auf dem Server einmalig
+#   ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519   # falls kein Key da
+# und den Inhalt von ~/.ssh/id_ed25519.pub auf GitHub eintragen
+# (Repo → Settings → Deploy keys, read-only genügt), oder vom Laptop aus:
+#   gh repo deploy-key add <pubkey-datei> --title cloudserver
 cd /home/thomas
-git clone <repo-url> mundwerk
+git clone git@github.com:tpfuhl/mundwerk.git mundwerk
 cd mundwerk/server
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
