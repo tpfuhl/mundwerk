@@ -83,6 +83,15 @@ data class RegisterResponse(
     val nickname: String,
 )
 
+data class TargetDto(
+    val phone: String,
+    val speaker: String,
+    val f1_mean: Double,
+    val f1_sd: Double,
+    val f2_mean: Double,
+    val f2_sd: Double,
+)
+
 interface MundwerkApi {
 
     @POST("api/register/")
@@ -90,6 +99,9 @@ interface MundwerkApi {
 
     @GET("api/items/")
     suspend fun items(@Query("level") level: String? = null): List<ItemDto>
+
+    @GET("api/targets/")
+    suspend fun targets(@Query("speaker") speaker: String): List<TargetDto>
 
     @GET("api/profile/")
     suspend fun profile(): ProfileDto

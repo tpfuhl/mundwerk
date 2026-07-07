@@ -12,7 +12,8 @@ from analysis.alignment import AlignmentError, align
 from analysis.pipeline import AnalysisError, analyze_recording
 
 from .models import Item, LearnerProfile, Recording, TargetSegment
-from .serializers import ItemSerializer, RecordingSerializer, RegisterSerializer
+from .serializers import (ItemSerializer, RecordingSerializer,
+                          RegisterSerializer, TargetSegmentSerializer)
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,20 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
         level = self.request.query_params.get("level")
         if level:
             qs = qs.filter(level=level)
+        return qs
+
+
+class TargetViewSet(viewsets.ReadOnlyModelViewSet):
+    """GET /api/targets/?speaker=male — Referenzformanten aller Laute
+    (für die Vokalviereck-Darstellung in der App)."""
+
+    serializer_class = TargetSegmentSerializer
+
+    def get_queryset(self):
+        qs = TargetSegment.objects.all().order_by("phone")
+        speaker = self.request.query_params.get("speaker")
+        if speaker:
+            qs = qs.filter(speaker=speaker)
         return qs
 
 

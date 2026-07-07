@@ -51,7 +51,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import eu.proportiodivina.mundwerk.data.SegmentResultDto
+import eu.proportiodivina.mundwerk.data.TargetDto
 import eu.proportiodivina.mundwerk.ui.HistoryScreen
+import eu.proportiodivina.mundwerk.ui.VowelChart
 import eu.proportiodivina.mundwerk.ui.RegistrationScreen
 import eu.proportiodivina.mundwerk.ui.ratingColor
 import eu.proportiodivina.mundwerk.ui.theme.MundwerkTheme
@@ -158,7 +160,7 @@ fun PracticeScreen(modifier: Modifier = Modifier, vm: MundwerkViewModel = viewMo
             result.error?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
             }
-            result.segments?.forEach { SegmentResultCard(it) }
+            result.segments?.forEach { SegmentResultCard(it, state.targets) }
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -241,7 +243,7 @@ private fun RecordButton(phase: Phase, onClick: () -> Unit) {
 }
 
 @Composable
-private fun SegmentResultCard(seg: SegmentResultDto) {
+private fun SegmentResultCard(seg: SegmentResultDto, targets: List<TargetDto>) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp),
                verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -271,6 +273,15 @@ private fun SegmentResultCard(seg: SegmentResultDto) {
             seg.note?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
             seg.feedback?.forEach {
                 Text("→ $it", style = MaterialTheme.typography.bodyLarge)
+            }
+            if (targets.any { it.phone == seg.phone }) {
+                VowelChart(
+                    targets = targets,
+                    focusPhone = seg.phone,
+                    measuredF1 = seg.f1?.toDouble(),
+                    measuredF2 = seg.f2?.toDouble(),
+                    measuredColor = ratingColor(seg.rating),
+                )
             }
         }
     }

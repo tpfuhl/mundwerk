@@ -1,7 +1,13 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from .models import Item, Recording
+from .models import Item, Recording, TargetSegment
+
+
+class TargetSegmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TargetSegment
+        fields = ["phone", "speaker", "f1_mean", "f1_sd", "f2_mean", "f2_sd"]
 
 
 class RegisterSerializer(serializers.Serializer):

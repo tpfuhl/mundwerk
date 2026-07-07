@@ -9,6 +9,7 @@ import eu.proportiodivina.mundwerk.data.MundwerkApi
 import eu.proportiodivina.mundwerk.data.ProfileDto
 import eu.proportiodivina.mundwerk.data.RecordingDto
 import eu.proportiodivina.mundwerk.data.RegisterRequest
+import eu.proportiodivina.mundwerk.data.TargetDto
 import eu.proportiodivina.mundwerk.data.TokenStore
 import eu.proportiodivina.mundwerk.data.uploadWav
 import kotlinx.coroutines.async
@@ -28,6 +29,8 @@ data class UiState(
     val speaker: String = "male",
     val phase: Phase = Phase.LOADING,
     val result: RecordingDto? = null,
+    // Referenzformanten des gewählten Sprechers (fürs Vokalviereck)
+    val targets: List<TargetDto> = emptyList(),
     val error: String? = null,
     // Registrierung (erster App-Start ohne Token)
     val needsRegistration: Boolean = false,
@@ -106,6 +109,25 @@ class MundwerkViewModel(app: Application) : AndroidViewModel(app) {
                     }
                 }
         }
+        loadTargets(_state.value.speaker)
+    }
+
+    private val targetCache = mutableMapOf<String, List<TargetDto>>()
+
+    private fun loadTargets(speaker: String) {
+        targetCache[speaker]?.let { cached ->
+            _state.update { it.copy(targets = cached) }
+            return
+        }
+        viewModelScope.launch {
+            // Ohne Referenzpunkte gibt es nur kein Vokalviereck — kein Fehler.
+            runCatching { api.targets(speaker) }.onSuccess { targets ->
+                targetCache[speaker] = targets
+                if (_state.value.speaker == speaker) {
+                    _state.update { it.copy(targets = targets) }
+                }
+            }
+        }
     }
 
     fun selectItem(index: Int) {
@@ -119,7 +141,8 @@ class MundwerkViewModel(app: Application) : AndroidViewModel(app) {
     fun previousItem() = selectItem((_state.value.index - 1).mod(_state.value.items.size))
 
     fun setSpeaker(speaker: String) {
-        _state.update { it.copy(speaker = speaker) }
+        _state.update { it.copy(speaker = speaker, targets = emptyList()) }
+        loadTargets(speaker)
     }
 
     fun openHistory() {
