@@ -16,3 +16,6 @@ local.properties
 
 # Claude Code (lokale Einstellungen)
 .claude/settings.local.json
+
+# lokal gebaute Verteil-APKs
+mundwerk-*.apk
