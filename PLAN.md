@@ -142,15 +142,15 @@ formants = snd.to_formant_burg(max_number_of_formants=5,
    3. Pro Übungswort: **3× gut aussprechen**, dann **bewusst falsch**
       (typische Fehler produzieren: /yː/ als /uː/, /øː/ als /oː/,
       /iː/ zu offen …). Ampel, Hinweistext und Vokalviereck beobachten.
-   4. **Abweichungen notieren** (Wort, was gesprochen, was die App
-      geurteilt hat) — überall dort, wo das App-Urteil vom geschulten
-      Ohr abweicht: falscher Alarm bei guter Aussprache oder Grün bei
-      absichtlich falscher.
-   5. Auswertung zu zweit: Verlauf ansehen (Ø-Distanz pro Laut) und die
-      **TargetSegments im Django-Admin justieren** — Schritt-für-Schritt-
-      Anleitung dafür in `server/README.md` („Anleitung für Kirsten“).
-      Änderungen wirken sofort in Bewertung und Vokalviereck, ohne
-      Deployment.
+   4. **Mustergültige Aufnahmen mit ⭐ markieren** (Button unter dem
+      Ergebnis, nur für Korpus-Mitglieder sichtbar) und **Abweichungen
+      notieren** (Wort, was gesprochen, was die App geurteilt hat) —
+      überall dort, wo das App-Urteil vom geschulten Ohr abweicht.
+   5. Kalibrieren: `manage.py calibrate_targets --speaker female`
+      berechnet aus den ⭐-Aufnahmen Mittelwert/Streuung pro Laut und
+      schreibt sie in die TargetSegments (erst `--dry-run`; mindestens
+      5 Aufnahmen pro Laut). Feinschliff weiterhin von Hand im Admin —
+      beides wirkt sofort, ohne Deployment.
    6. Die Aufnahmen von Thomas & Kirsten bleiben gespeichert
       (Korpus-Gruppe) und können später mit `validation/validate.py`
       nachvermessen werden.

@@ -73,12 +73,30 @@ Passwort) bekommst du von Thomas.
 3. Jedes Wort **3× gut** und danach **bewusst falsch** sprechen
    (typische Lernerfehler nachahmen). Notiere jede Stelle, wo das
    App-Urteil von deinem Ohr abweicht: Wort, was du gesprochen hast,
-   was die App sagte. Deine Aufnahmen bleiben gespeichert (Korpus-
-   Einwilligung) und dienen später als Referenzmaterial.
+   was die App sagte.
+4. War eine Aufnahme mustergültig, tippe unter dem Ergebnis auf
+   **„☆ Als Referenzaufnahme markieren“** (den Button siehst nur du
+   bzw. Thomas). Aus diesen ⭐-Aufnahmen berechnen wir später die
+   Zielwerte — deine korrekte Aussprache wird damit wörtlich zur
+   Referenz. Falls du einen Stern versehentlich setzt: nochmal tippen
+   entfernt ihn; auch im Admin (Recordings, Spalte „Ist referenz“)
+   lässt er sich setzen und entfernen.
 
 ### 2. Zielwerte (Referenzformanten) justieren
 
-Im Admin unter **Api → Target segments**:
+**Automatisch aus euren ⭐-Aufnahmen** (macht Thomas auf dem Server,
+sobald ≥ 5 markierte Aufnahmen pro Laut vorliegen):
+
+```bash
+manage.py calibrate_targets --speaker female --dry-run   # Vorschau alt → neu
+manage.py calibrate_targets --speaker female             # schreiben
+```
+
+Das berechnet pro Laut Mittelwert und Streuung aus allen markierten
+Aufnahmen (Untergrenzen: F1 ±30 Hz, F2 ±60 Hz, damit die Bewertung
+nicht zu streng wird) und aktualisiert die TargetSegments.
+
+**Von Hand (Feinschliff)** im Admin unter **Api → Target segments**:
 
 1. Laut und Stimmlage auswählen — z. B. `/yː/ (female)`.
 2. Vier Zahlen bestimmen die Bewertung, alle in Hertz:
