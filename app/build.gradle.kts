@@ -43,6 +43,23 @@ android {
             "\"${props.getProperty("mundwerk.apiToken") ?: ""}\"")
     }
 
+    // Zwei Varianten: "dev" mit einkompiliertem Token aus local.properties
+    // (Registrierung erscheint nie), "learner" ohne Token — verhält sich
+    // wie bei einem echten Lerner (Registrierung beim ersten Start).
+    // Eigene applicationId, damit beide parallel installierbar sind.
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("dev") {
+            dimension = "distribution"
+        }
+        create("learner") {
+            dimension = "distribution"
+            applicationIdSuffix = ".learner"
+            versionNameSuffix = "-learner"
+            buildConfigField("String", "API_TOKEN", "\"\"")
+        }
+    }
+
     buildTypes {
         release {
             optimization {

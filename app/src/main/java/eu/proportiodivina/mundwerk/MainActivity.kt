@@ -8,8 +8,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,10 +24,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -45,6 +52,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -79,6 +89,12 @@ fun PracticeScreen(modifier: Modifier = Modifier, vm: MundwerkViewModel = viewMo
     val micPermission = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted -> if (granted) vm.toggleRecording() }
+    var dialog by remember { mutableStateOf<String?>(null) }
+
+    when (dialog) {
+        "hilfe" -> HilfeDialog(onClose = { dialog = null })
+        "ueber" -> UeberDialog(onClose = { dialog = null })
+    }
 
     if (state.needsRegistration) {
         RegistrationScreen(
@@ -110,7 +126,7 @@ fun PracticeScreen(modifier: Modifier = Modifier, vm: MundwerkViewModel = viewMo
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text("Mundwerk", style = MaterialTheme.typography.headlineMedium)
+        TopBar(onHelp = { dialog = "hilfe" }, onAbout = { dialog = "ueber" })
 
         if (state.phase == Phase.LOADING) {
             CircularProgressIndicator()
@@ -177,6 +193,75 @@ fun PracticeScreen(modifier: Modifier = Modifier, vm: MundwerkViewModel = viewMo
              style = MaterialTheme.typography.labelSmall,
              color = MaterialTheme.colorScheme.outline)
     }
+}
+
+@Composable
+private fun TopBar(onHelp: () -> Unit, onAbout: () -> Unit) {
+    var menuOpen by remember { mutableStateOf(false) }
+    Box(Modifier.fillMaxWidth()) {
+        Box(Modifier.align(Alignment.CenterStart)) {
+            IconButton(onClick = { menuOpen = true }) {
+                Text("☰", style = MaterialTheme.typography.titleLarge)
+            }
+            DropdownMenu(expanded = menuOpen,
+                         onDismissRequest = { menuOpen = false }) {
+                DropdownMenuItem(text = { Text(stringResource(R.string.menu_hilfe)) },
+                                 onClick = { menuOpen = false; onHelp() })
+                DropdownMenuItem(text = { Text(stringResource(R.string.menu_ueber)) },
+                                 onClick = { menuOpen = false; onAbout() })
+            }
+        }
+        Row(modifier = Modifier.align(Alignment.Center),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Image(painterResource(R.drawable.logo_mark), contentDescription = null,
+                  modifier = Modifier.height(34.dp))
+            Text(stringResource(R.string.app_name),
+                 style = MaterialTheme.typography.headlineMedium)
+        }
+    }
+}
+
+@Composable
+private fun HilfeDialog(onClose: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onClose,
+        confirmButton = {
+            TextButton(onClick = onClose) { Text(stringResource(R.string.dialog_schliessen)) }
+        },
+        title = { Text(stringResource(R.string.hilfe_titel)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(R.string.hilfe_schritt_1))
+                Text(stringResource(R.string.hilfe_schritt_2))
+                Text(stringResource(R.string.hilfe_schritt_3))
+                Text(stringResource(R.string.hilfe_schritt_4))
+                Text(stringResource(R.string.hilfe_tipp))
+            }
+        })
+}
+
+@Composable
+private fun UeberDialog(onClose: () -> Unit) {
+    val uriHandler = LocalUriHandler.current
+    val url = stringResource(R.string.ueber_link_url)
+    AlertDialog(
+        onDismissRequest = onClose,
+        confirmButton = {
+            TextButton(onClick = onClose) { Text(stringResource(R.string.dialog_schliessen)) }
+        },
+        title = { Text(stringResource(R.string.ueber_titel)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(R.string.ueber_beschreibung))
+                Text(stringResource(R.string.ueber_team))
+                Text(stringResource(R.string.ueber_link_text),
+                     color = MaterialTheme.colorScheme.primary,
+                     modifier = Modifier.clickable { uriHandler.openUri(url) })
+                Text("Version ${BuildConfig.VERSION_NAME}",
+                     style = MaterialTheme.typography.labelSmall)
+            }
+        })
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

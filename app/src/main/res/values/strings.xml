@@ -1,3 +1,32 @@
 <resources>
     <string name="app_name">Mundwerk</string>
+
+    <!-- Menü -->
+    <string name="menu_hilfe">Hilfe</string>
+    <string name="menu_ueber">Über</string>
+    <string name="dialog_schliessen">Schließen</string>
+
+    <!-- Hilfe-Dialog -->
+    <string name="hilfe_titel">So funktioniert Mundwerk</string>
+    <string name="hilfe_schritt_1">1. Wähle oben ein Übungswort und deine
+        Stimmlage (tiefe/hohe Stimme) — danach richten sich die Zielwerte.</string>
+    <string name="hilfe_schritt_2">2. Tippe auf „Aufnehmen“, sprich das Wort
+        deutlich ins Mikrofon und tippe dann auf „Stopp &amp; auswerten“.</string>
+    <string name="hilfe_schritt_3">3. Du bekommst sofort Feedback: die Ampel
+        zeigt, wie nah du an der deutschen Standardaussprache bist, dazu
+        konkrete Hinweise (z. B. „Lippen runden“) und das Vokalviereck —
+        dein Punkt sollte in der markierten Zielzone liegen.</string>
+    <string name="hilfe_schritt_4">4. Mit „Weiter“ kommst du zum nächsten
+        Wort; unter „Verlauf“ siehst du deinen Fortschritt pro Laut.</string>
+    <string name="hilfe_tipp">Tipp: Übe in ruhiger Umgebung, sprich normal
+        laut und dehne den Vokal nicht künstlich.</string>
+
+    <!-- Über-Dialog -->
+    <string name="ueber_titel">Über Mundwerk</string>
+    <string name="ueber_beschreibung">Aussprache-App für Deutsch-Lernende:
+        interaktive Korrektur der Eigenproduktion per Formantanalyse.</string>
+    <string name="ueber_team">Team: Kirsten Jänich (Phonetik/DaF),
+        Thomas Pfuhl (Computerlinguistik).</string>
+    <string name="ueber_link_text">www.proportiodivina.eu/mundwerk</string>
+    <string name="ueber_link_url">https://www.proportiodivina.eu/mundwerk</string>
 </resources>
