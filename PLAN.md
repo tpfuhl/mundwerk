@@ -125,12 +125,35 @@ formants = snd.to_formant_burg(max_number_of_formants=5,
   - ✅ Wortlisten-Pipeline: CSV-Import (`manage.py import_items`, erkennt
     Komma/Semikolon, aktualisiert statt dupliziert), Kuratierung im Admin
     durch Kirsten (Minimalpaare, Niveaus, L1-Bezug).
+  - *Inzwischen außerdem ergänzt:* Hamburger-Menü (Profil-Editor,
+    Hilfe, Über), App-Icon und Logo aus der Wortmarke, Git-basierte
+    Versionsnummer, Build-Varianten dev/learner.
+
 ### Nächste Schritte (Stand Juli 2026, in dieser Reihenfolge)
 
 1. **Referenzwert-Validierung mit echten Stimmen** *(kein Code — Thomas &
-   Kirsten)*: alle Wörter in der App sprechen, gut und absichtlich falsch;
-   TargetSegments im Admin justieren, wo die Literaturwerte danebenliegen.
-   Wichtigster fachlicher Schritt — alles Weitere baut darauf.
+   Kirsten)*. Wichtigster fachlicher Schritt — alles Weitere baut darauf.
+   Konkretes Protokoll:
+   1. App installieren: Thomas baut die APK mit dem jeweiligen Token
+      (`mundwerk-kirsten.apk` liegt bereit). Kontrolle: Menü → Profil
+      zeigt den richtigen Nickname; dort auch das Profil ausfüllen.
+   2. Stimmlage wählen: Thomas „tiefe Stimme“, Kirsten „hohe Stimme“ —
+      danach richten sich die Zielwerte.
+   3. Pro Übungswort: **3× gut aussprechen**, dann **bewusst falsch**
+      (typische Fehler produzieren: /yː/ als /uː/, /øː/ als /oː/,
+      /iː/ zu offen …). Ampel, Hinweistext und Vokalviereck beobachten.
+   4. **Abweichungen notieren** (Wort, was gesprochen, was die App
+      geurteilt hat) — überall dort, wo das App-Urteil vom geschulten
+      Ohr abweicht: falscher Alarm bei guter Aussprache oder Grün bei
+      absichtlich falscher.
+   5. Auswertung zu zweit: Verlauf ansehen (Ø-Distanz pro Laut) und die
+      **TargetSegments im Django-Admin justieren** — Schritt-für-Schritt-
+      Anleitung dafür in `server/README.md` („Anleitung für Kirsten“).
+      Änderungen wirken sofort in Bewertung und Vokalviereck, ohne
+      Deployment.
+   6. Die Aufnahmen von Thomas & Kirsten bleiben gespeichert
+      (Korpus-Gruppe) und können später mit `validation/validate.py`
+      nachvermessen werden.
 2. ✅ **MFA-Integration**: Forced Alignment mit dem Montreal Forced
    Aligner (mfa align_one, conda-Env auf dem Server, german_mfa) →
    beliebige Wörter statt vokal-dominanter Einsilber. Fallback bleibt
