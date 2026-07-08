@@ -24,6 +24,16 @@ class RegisterSerializer(serializers.Serializer):
         return value
 
 
+class ProfileUpdateSerializer(serializers.Serializer):
+    """Editierbare Profilfelder — Nickname (username) und Token bleiben fest."""
+
+    vorname = serializers.CharField(max_length=150)
+    nachname = serializers.CharField(max_length=150)
+    muttersprache = serializers.RegexField(
+        r"^[A-Za-z]{2}$",
+        error_messages={"invalid": "Muttersprache als ISO-639-1-Code angeben, z. B. fr, en, it."})
+
+
 class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item

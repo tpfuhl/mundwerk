@@ -14,6 +14,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Query
 
@@ -83,6 +84,12 @@ data class RegisterResponse(
     val nickname: String,
 )
 
+data class ProfileUpdateRequest(
+    val vorname: String,
+    val nachname: String,
+    val muttersprache: String,
+)
+
 data class TargetDto(
     val phone: String,
     val speaker: String,
@@ -105,6 +112,9 @@ interface MundwerkApi {
 
     @GET("api/profile/")
     suspend fun profile(): ProfileDto
+
+    @PUT("api/profile/")
+    suspend fun updateProfile(@Body body: ProfileUpdateRequest): ProfileDto
 
     @GET("api/recordings/")
     suspend fun recordings(): List<RecordingDto>

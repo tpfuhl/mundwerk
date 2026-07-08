@@ -7,6 +7,7 @@ import eu.proportiodivina.mundwerk.audio.WavRecorder
 import eu.proportiodivina.mundwerk.data.ItemDto
 import eu.proportiodivina.mundwerk.data.MundwerkApi
 import eu.proportiodivina.mundwerk.data.ProfileDto
+import eu.proportiodivina.mundwerk.data.ProfileUpdateRequest
 import eu.proportiodivina.mundwerk.data.RecordingDto
 import eu.proportiodivina.mundwerk.data.RegisterRequest
 import eu.proportiodivina.mundwerk.data.TargetDto
@@ -36,6 +37,11 @@ data class UiState(
     val needsRegistration: Boolean = false,
     val registering: Boolean = false,
     val registerError: String? = null,
+    // Profil-Editor (Menü → Profil)
+    val profileEditor: ProfileDto? = null,   // null = Editor geschlossen
+    val profileEditorLoading: Boolean = false,
+    val profileSaving: Boolean = false,
+    val profileEditorError: String? = null,
     // Verlaufs-Screen
     val showHistory: Boolean = false,
     val historyLoading: Boolean = false,
@@ -142,6 +148,42 @@ class MundwerkViewModel(app: Application) : AndroidViewModel(app) {
     fun setSpeaker(speaker: String) {
         _state.update { it.copy(speaker = speaker, targets = emptyList()) }
         loadTargets(speaker)
+    }
+
+    fun openProfileEditor() {
+        _state.update { it.copy(profileEditorLoading = true, profileEditorError = null) }
+        viewModelScope.launch {
+            runCatching { api.profile() }
+                .onSuccess { p ->
+                    _state.update { it.copy(profileEditor = p, profileEditorLoading = false) }
+                }
+                .onFailure { e ->
+                    _state.update { it.copy(profileEditorLoading = false,
+                                            error = "Profil nicht ladbar: ${e.message}") }
+                }
+        }
+    }
+
+    fun closeProfileEditor() {
+        _state.update { it.copy(profileEditor = null, profileEditorError = null) }
+    }
+
+    fun saveProfile(vorname: String, nachname: String, muttersprache: String) {
+        _state.update { it.copy(profileSaving = true, profileEditorError = null) }
+        viewModelScope.launch {
+            runCatching {
+                api.updateProfile(ProfileUpdateRequest(
+                    vorname.trim(), nachname.trim(), muttersprache))
+            }
+                .onSuccess { updated ->
+                    _state.update { it.copy(profileSaving = false, profileEditor = null,
+                                            profile = updated) }
+                }
+                .onFailure { e ->
+                    _state.update { it.copy(profileSaving = false,
+                                            profileEditorError = "Speichern fehlgeschlagen: ${e.message}") }
+                }
+        }
     }
 
     fun openHistory() {

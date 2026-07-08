@@ -12,8 +12,9 @@ from analysis.alignment import AlignmentError, align
 from analysis.pipeline import AnalysisError, analyze_recording
 
 from .models import Item, LearnerProfile, Recording, TargetSegment
-from .serializers import (ItemSerializer, RecordingSerializer,
-                          RegisterSerializer, TargetSegmentSerializer)
+from .serializers import (ItemSerializer, ProfileUpdateSerializer,
+                          RecordingSerializer, RegisterSerializer,
+                          TargetSegmentSerializer)
 
 logger = logging.getLogger(__name__)
 
@@ -146,10 +147,27 @@ class RegisterView(APIView):
 
 class ProfileView(APIView):
     """GET /api/profile/ — Übungsstatistik des angemeldeten Users.
+    PUT /api/profile/ — Profil editieren (vorname, nachname, muttersprache).
 
-    Aggregiert die Analyseergebnisse pro Vokal: Versuche, mittlere und
+    GET aggregiert die Analyseergebnisse pro Vokal: Versuche, mittlere und
     beste Distanz (in kombinierten Standardabweichungen), letztes Rating.
+    PUT ändert nur die Profilfelder — Nickname (username) und Token
+    bleiben unverändert.
     """
+
+    def put(self, request):
+        serializer = ProfileUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        user = request.user
+        user.first_name = data["vorname"]
+        user.last_name = data["nachname"]
+        user.save(update_fields=["first_name", "last_name"])
+        learner, _ = LearnerProfile.objects.get_or_create(
+            user=user, defaults={"native_language": data["muttersprache"].lower()})
+        learner.native_language = data["muttersprache"].lower()
+        learner.save(update_fields=["native_language"])
+        return self.get(request)
 
     def get(self, request):
         recordings = (Recording.objects

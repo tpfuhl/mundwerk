@@ -63,6 +63,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import eu.proportiodivina.mundwerk.data.SegmentResultDto
 import eu.proportiodivina.mundwerk.data.TargetDto
 import eu.proportiodivina.mundwerk.ui.HistoryScreen
+import eu.proportiodivina.mundwerk.ui.ProfilDialog
 import eu.proportiodivina.mundwerk.ui.VowelChart
 import eu.proportiodivina.mundwerk.ui.RegistrationScreen
 import eu.proportiodivina.mundwerk.ui.ratingColor
@@ -96,6 +97,16 @@ fun PracticeScreen(modifier: Modifier = Modifier, vm: MundwerkViewModel = viewMo
         "ueber" -> UeberDialog(onClose = { dialog = null })
     }
 
+    state.profileEditor?.let { profile ->
+        ProfilDialog(
+            profile = profile,
+            saving = state.profileSaving,
+            error = state.profileEditorError,
+            onSave = vm::saveProfile,
+            onClose = vm::closeProfileEditor,
+        )
+    }
+
     if (state.needsRegistration) {
         RegistrationScreen(
             registering = state.registering,
@@ -126,7 +137,8 @@ fun PracticeScreen(modifier: Modifier = Modifier, vm: MundwerkViewModel = viewMo
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        TopBar(onHelp = { dialog = "hilfe" }, onAbout = { dialog = "ueber" })
+        TopBar(onProfile = vm::openProfileEditor,
+               onHelp = { dialog = "hilfe" }, onAbout = { dialog = "ueber" })
 
         if (state.phase == Phase.LOADING) {
             CircularProgressIndicator()
@@ -196,7 +208,7 @@ fun PracticeScreen(modifier: Modifier = Modifier, vm: MundwerkViewModel = viewMo
 }
 
 @Composable
-private fun TopBar(onHelp: () -> Unit, onAbout: () -> Unit) {
+private fun TopBar(onProfile: () -> Unit, onHelp: () -> Unit, onAbout: () -> Unit) {
     var menuOpen by remember { mutableStateOf(false) }
     Box(Modifier.fillMaxWidth()) {
         Box(Modifier.align(Alignment.CenterStart)) {
@@ -205,6 +217,8 @@ private fun TopBar(onHelp: () -> Unit, onAbout: () -> Unit) {
             }
             DropdownMenu(expanded = menuOpen,
                          onDismissRequest = { menuOpen = false }) {
+                DropdownMenuItem(text = { Text(stringResource(R.string.menu_profil)) },
+                                 onClick = { menuOpen = false; onProfile() })
                 DropdownMenuItem(text = { Text(stringResource(R.string.menu_hilfe)) },
                                  onClick = { menuOpen = false; onHelp() })
                 DropdownMenuItem(text = { Text(stringResource(R.string.menu_ueber)) },

@@ -2,9 +2,20 @@
     <string name="app_name">Mundwerk</string>
 
     <!-- Menü -->
+    <string name="menu_profil">Profil</string>
     <string name="menu_hilfe">Hilfe</string>
     <string name="menu_ueber">Über</string>
     <string name="dialog_schliessen">Schließen</string>
+
+    <!-- Profil-Dialog -->
+    <string name="profil_titel">Mein Profil</string>
+    <string name="profil_nickname">Angemeldet als: %1$s</string>
+    <string name="profil_vorname">Vorname</string>
+    <string name="profil_nachname">Nachname</string>
+    <string name="profil_muttersprache">Muttersprache</string>
+    <string name="profil_speichern">Speichern</string>
+    <string name="profil_speichert">Speichere …</string>
+    <string name="profil_abbrechen">Abbrechen</string>
 
     <!-- Hilfe-Dialog -->
     <string name="hilfe_titel">So funktioniert Mundwerk</string>
