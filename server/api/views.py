@@ -4,6 +4,8 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.authtoken.models import Token
+from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
@@ -66,6 +68,21 @@ class RecordingViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin,
     def perform_create(self, serializer):
         recording = serializer.save(user=self.request.user)
         self._analyze(recording)
+
+    @action(detail=True, methods=["post"])
+    def referenz(self, request, pk=None):
+        """POST /api/recordings/{id}/referenz/ {"ist_referenz": true|false}
+
+        Markiert die eigene Aufnahme als mustergültig — nur für Mitglieder
+        der Korpus-Gruppe (deren Aufnahmen fließen in die Kalibrierung ein).
+        """
+        if not request.user.groups.filter(name="korpus").exists():
+            raise PermissionDenied(
+                "Nur Korpus-Mitglieder können Referenzaufnahmen markieren.")
+        recording = self.get_object()  # get_queryset: nur eigene Aufnahmen
+        recording.ist_referenz = bool(request.data.get("ist_referenz", True))
+        recording.save(update_fields=["ist_referenz"])
+        return Response(self.get_serializer(recording).data)
 
     @staticmethod
     def _align(recording):
@@ -198,6 +215,8 @@ class ProfileView(APIView):
             "vorname": request.user.first_name,
             "nachname": request.user.last_name,
             "muttersprache": learner.native_language if learner else None,
+            # Korpus-Mitglieder dürfen Aufnahmen als Referenz markieren
+            "korpus": request.user.groups.filter(name="korpus").exists(),
             "uebungen_gesamt": recordings.count(),
             "phones": phones,
         })

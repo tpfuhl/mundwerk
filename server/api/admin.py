@@ -24,6 +24,8 @@ class TargetSegmentAdmin(admin.ModelAdmin):
 
 @admin.register(Recording)
 class RecordingAdmin(admin.ModelAdmin):
-    list_display = ("id", "item", "speaker", "status", "created_at")
-    list_filter = ("status", "speaker")
+    list_display = ("id", "user", "item", "speaker", "status",
+                    "ist_referenz", "created_at")
+    list_editable = ("ist_referenz",)
+    list_filter = ("status", "speaker", "ist_referenz", "user")
     readonly_fields = ("result", "created_at")

@@ -69,6 +69,9 @@ class Recording(models.Model):
                                default="male")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
     result = models.JSONField(null=True, blank=True)  # Formanten + Rating + Feedback
+    # Vom Sprecher (Korpus-Gruppe) als mustergültig markiert — Grundlage
+    # für die Referenzwert-Kalibrierung (manage.py calibrate_targets).
+    ist_referenz = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

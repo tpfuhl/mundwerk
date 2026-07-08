@@ -7,6 +7,10 @@
     <string name="menu_ueber">Über</string>
     <string name="dialog_schliessen">Schließen</string>
 
+    <!-- Referenz-Markierung (nur Korpus-Mitglieder) -->
+    <string name="referenz_markieren">☆ Als Referenzaufnahme markieren</string>
+    <string name="referenz_markiert">⭐ Referenzaufnahme — tippen zum Entfernen</string>
+
     <!-- Profil-Dialog -->
     <string name="profil_titel">Mein Profil</string>
     <string name="profil_nickname">Angemeldet als: %1$s</string>

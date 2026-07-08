@@ -9,6 +9,7 @@ import eu.proportiodivina.mundwerk.data.MundwerkApi
 import eu.proportiodivina.mundwerk.data.ProfileDto
 import eu.proportiodivina.mundwerk.data.ProfileUpdateRequest
 import eu.proportiodivina.mundwerk.data.RecordingDto
+import eu.proportiodivina.mundwerk.data.ReferenzRequest
 import eu.proportiodivina.mundwerk.data.RegisterRequest
 import eu.proportiodivina.mundwerk.data.TargetDto
 import eu.proportiodivina.mundwerk.data.TokenStore
@@ -30,6 +31,9 @@ data class UiState(
     val speaker: String = "male",
     val phase: Phase = Phase.LOADING,
     val result: RecordingDto? = null,
+    // Korpus-Mitglied? Dann darf die Aufnahme als Referenz markiert werden.
+    val isKorpus: Boolean = false,
+    val referenzSaving: Boolean = false,
     // Referenzformanten des gewählten Sprechers (fürs Vokalviereck)
     val targets: List<TargetDto> = emptyList(),
     val error: String? = null,
@@ -117,6 +121,29 @@ class MundwerkViewModel(app: Application) : AndroidViewModel(app) {
                 }
         }
         loadTargets(_state.value.speaker)
+        viewModelScope.launch {
+            // Korpus-Status fürs Referenz-Markieren; Fehler hier sind egal.
+            runCatching { api.profile() }.onSuccess { p ->
+                _state.update { it.copy(isKorpus = p.korpus == true) }
+            }
+        }
+    }
+
+    /** ⭐-Button: eigene Aufnahme als mustergültig markieren (Korpus). */
+    fun toggleReferenz() {
+        val recording = _state.value.result ?: return
+        val neu = recording.ist_referenz != true
+        _state.update { it.copy(referenzSaving = true) }
+        viewModelScope.launch {
+            runCatching { api.setReferenz(recording.id, ReferenzRequest(neu)) }
+                .onSuccess { updated ->
+                    _state.update { it.copy(result = updated, referenzSaving = false) }
+                }
+                .onFailure { e ->
+                    _state.update { it.copy(referenzSaving = false,
+                                            error = "Markieren fehlgeschlagen: ${e.message}") }
+                }
+        }
     }
 
     private fun loadTargets(speaker: String) {

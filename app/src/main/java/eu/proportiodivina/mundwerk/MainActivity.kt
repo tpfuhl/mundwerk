@@ -191,6 +191,15 @@ fun PracticeScreen(modifier: Modifier = Modifier, vm: MundwerkViewModel = viewMo
             result.segments?.forEach { SegmentResultCard(it, state.targets) }
         }
 
+        if (state.isKorpus && state.result?.status == "done") {
+            TextButton(onClick = vm::toggleReferenz,
+                       enabled = !state.referenzSaving) {
+                Text(stringResource(
+                    if (state.result?.ist_referenz == true) R.string.referenz_markiert
+                    else R.string.referenz_markieren))
+            }
+        }
+
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             OutlinedButton(onClick = vm::previousItem,
                            enabled = state.phase == Phase.READY) { Text("← Zurück") }

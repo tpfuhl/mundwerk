@@ -16,6 +16,7 @@ import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Part
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 // DTOs — Feldnamen entsprechen exakt dem JSON der Django-API.
@@ -52,8 +53,11 @@ data class RecordingDto(
     val item: ItemDto?,
     val status: String,        // "pending" | "done" | "error"
     val result: AnalysisResultDto?,
+    val ist_referenz: Boolean?,
     val created_at: String?,   // ISO-8601
 )
+
+data class ReferenzRequest(val ist_referenz: Boolean)
 
 data class PhoneStatDto(
     val phone: String,
@@ -68,6 +72,7 @@ data class ProfileDto(
     val vorname: String?,
     val nachname: String?,
     val muttersprache: String?,
+    val korpus: Boolean?,      // darf Referenzaufnahmen markieren
     val uebungen_gesamt: Int,
     val phones: List<PhoneStatDto>,
 )
@@ -118,6 +123,10 @@ interface MundwerkApi {
 
     @GET("api/recordings/")
     suspend fun recordings(): List<RecordingDto>
+
+    @POST("api/recordings/{id}/referenz/")
+    suspend fun setReferenz(@Path("id") id: Int,
+                            @Body body: ReferenzRequest): RecordingDto
 
     @Multipart
     @POST("api/recordings/")
