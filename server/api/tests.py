@@ -16,7 +16,7 @@ from rest_framework.test import APITestCase
 from parselmouth.praat import call
 
 from analysis.alignment import diff_phones, write_lexicon
-from analysis.pipeline import analyze_recording, evaluate
+from analysis.pipeline import analyze_recording, evaluate, hz_to_bark
 
 from .models import FeedbackRule, Item
 from .views import RecordingViewSet
@@ -187,6 +187,33 @@ class FeedbackRuleTests(TestCase):
                           feedback_fn=lambda p, d, r: f"FIXTEXT {p} {d} {r}")
         self.assertEqual(result["rating"], "rot")
         self.assertEqual(result["feedback"], ["FIXTEXT iː f1 high"])
+
+
+class BarkEvaluationTests(TestCase):
+    def test_hz_to_bark_monoton(self):
+        self.assertLess(hz_to_bark(280), hz_to_bark(800))
+        self.assertLess(hz_to_bark(800), hz_to_bark(2200))
+
+    def test_treffer_gruen_und_bark_markiert(self):
+        r = evaluate("iː", f1=280, f2=2150, target=(280, 45, 2150, 180))
+        self.assertEqual(r["rating"], "grün")
+        self.assertEqual(r["raum"], "bark")
+        self.assertAlmostEqual(r["z_f1"], 0.0, places=2)
+
+    def test_nahe_am_ziel_wie_hz_z(self):
+        # Innerhalb ~1 SD ist der Bark-z praktisch der Hz-z (lokale
+        # Linearisierung) — Schwellen bleiben gültig.
+        r = evaluate("iː", f1=280 + 45, f2=2150, target=(280, 45, 2150, 180))
+        self.assertAlmostEqual(r["z_f1"], 1.0, delta=0.15)
+
+    def test_sd_normierung_konsistent_ueber_vokalraum(self):
+        # Weil die Streuung mit-linearisiert wird, ergibt „+2 SD“ überall
+        # z≈2 — tiefer wie hoher Vokal. Das ist die belastbare Eigenschaft
+        # (keine perzeptive Umgewichtung bei per-Vokal-sd).
+        z_tief = evaluate("uː", 300 + 100, 800, (300, 50, 800, 150))["z_f1"]
+        z_hoch = evaluate("aː", 700 + 100, 1250, (700, 50, 1250, 150))["z_f1"]
+        self.assertAlmostEqual(z_tief, 2.0, delta=0.1)
+        self.assertAlmostEqual(z_hoch, 2.0, delta=0.1)
 
 
 class MeasurementFieldsTests(TestCase):

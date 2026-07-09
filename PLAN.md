@@ -323,11 +323,20 @@ Sagittalschnitt-Grafik (erst statisch, später animiert) und
 ### 5. Sprecherunabhängige Bewertung statt male/female-Hz-Tabellen
 Kirstens Punkt: ein /aː/ bleibt ein /aː/, egal wer spricht — es zählen
 die Relationen, nicht absolute Frequenzen. Operationalisierung:
-- kurzfristig: Vergleich im **Bark-Raum** (gehörgerechte, logarithmische
-  Skala) statt roher Hz — dämpft den Stimmlagen-Effekt deutlich;
-- mittelfristig: **Lobanov-Normalisierung** nach kurzer
-  Onboarding-Kalibrierung (User spricht /aː iː uː/) — ersetzt die
-  Stimmlagen-Auswahl komplett und ist der Standard der Soziophonetik.
+- **Bark-Raum — umgesetzt** (`pipeline.hz_to_bark`, Traunmüller 1990):
+  Der Vergleich läuft jetzt auf der gehörgerechten Bark-Skala,
+  `result.segments[].raum = "bark"`. **Ehrliche Bilanz:** Solange die
+  Zielwerte *pro Stimmlage* in Hz gepflegt sind und jede Dimension durch
+  ihre eigene (mit-linearisierte) Streuung geteilt wird, hebt sich der
+  perzeptive Effekt nahe am Ziel fast auf — die Ampel ändert sich kaum.
+  Bark ist damit die *richtige Skala* und die Vorbereitung, aber noch
+  nicht die Sprecherunabhängigkeit. Der Aufwand war klein, das Risiko
+  null (Schwellen bleiben gültig).
+- **Lobanov-Normalisierung — der eigentliche Hebel, noch offen:** nach
+  kurzer Onboarding-Kalibrierung (User spricht /aː iː uː/) z-normieren;
+  ersetzt die Stimmlagen-Auswahl komplett, Standard der Soziophonetik.
+  Braucht App-Onboarding + eine Kalibrier-Speicherung pro User — daher
+  eigener Block (nach dem Vokal-Curriculum sinnvoll).
 - Nüchtern anzumerken: der rohe Abstand F2−F1 in Hz ist selbst *nicht*
   sprecherunabhängig; Bark/Lobanov/Nearey sind genau die sauberen
   Formalisierungen der „relativen Abstände“. Und bei hoher

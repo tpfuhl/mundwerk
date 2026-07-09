@@ -102,11 +102,42 @@ def measure_intensity(snd: parselmouth.Sound, start: float,
     return round(db, 1) if db == db else None
 
 
+def hz_to_bark(f: float) -> float:
+    """Hertz → Bark (Traunmüller 1990).
+
+    Das Ohr hört nicht linear, sondern staucht hohe Frequenzen: 100 Hz
+    überspannen bei tiefen Frequenzen mehr Bark als bei hohen. Die
+    Bark-Skala ist damit die perzeptiv richtige Bühne für den Vergleich
+    (Kirstens Punkt „es zählen die relativen Abstände“).
+
+    Ehrlich eingeordnet: Solange die Zielwerte *pro Stimmlage* in Hz
+    gepflegt sind und jede Dimension durch ihre eigene (mit-linearisierte)
+    Streuung geteilt wird, ist die Ampel nahe am Ziel fast identisch zur
+    Hz-Rechnung — Bark ist hier v. a. die saubere Skala und die
+    Vorbereitung darauf, die Stimmlagen-Tabellen später durch
+    Lobanov-Normalisierung (Onboarding-Kalibrierung) zu ersetzen. Das ist
+    der Schritt, der echte Sprecherunabhängigkeit bringt.
+    """
+    return 26.81 / (1 + 1960.0 / f) - 0.53
+
+
+def _bark_z(value: float, mean: float, sd: float) -> float:
+    """z-Abweichung im Bark-Raum. Die in Hz gepflegte Streuung wird lokal
+    linearisiert (bark(mean+sd) − bark(mean)); nahe am Ziel bleibt der
+    z-Wert damit praktisch identisch zum Hz-z, sodass die Schwellen
+    (GREEN_Z/YELLOW_Z) weiter gelten — Bark ändert nur die Gewichtung
+    größerer Abweichungen und über den Vokalraum hinweg."""
+    bark_sd = hz_to_bark(mean + sd) - hz_to_bark(mean)
+    return (hz_to_bark(value) - hz_to_bark(mean)) / bark_sd
+
+
 def evaluate(phone: str, f1: float, f2: float,
              target: tuple[float, float, float, float] | None,
              feedback_fn=feedback_for) -> dict:
     """Messwerte gegen Referenz (f1_mean, f1_sd, f2_mean, f2_sd) vergleichen.
 
+    Der Vergleich läuft im Bark-Raum (perzeptiv, s. hz_to_bark), die
+    gespeicherten Referenzwerte bleiben in Hz.
     target=None → kein Referenzwert vorhanden, nur Messwerte zurückgeben.
     feedback_fn(phone, dim, direction) liefert die Hinweistexte — das
     Django-Backend reicht hier die DB-kuratierten Regeln (FeedbackRule)
@@ -116,8 +147,8 @@ def evaluate(phone: str, f1: float, f2: float,
         return {"phone": phone, "f1": round(f1), "f2": round(f2),
                 "rating": None, "note": "kein Referenzwert vorhanden"}
     f1_mean, f1_sd, f2_mean, f2_sd = target
-    z1 = (f1 - f1_mean) / f1_sd
-    z2 = (f2 - f2_mean) / f2_sd
+    z1 = _bark_z(f1, f1_mean, f1_sd)
+    z2 = _bark_z(f2, f2_mean, f2_sd)
     dist = (z1**2 + z2**2) ** 0.5
     rating = "grün" if dist < GREEN_Z else "gelb" if dist < YELLOW_Z else "rot"
 
@@ -133,6 +164,7 @@ def evaluate(phone: str, f1: float, f2: float,
         "target_f1": f1_mean, "target_f2": f2_mean,
         "z_f1": round(z1, 2), "z_f2": round(z2, 2),
         "distanz": round(dist, 2),
+        "raum": "bark",  # z-Werte/Distanz im Bark-Raum (s. hz_to_bark)
         "rating": rating,
         "feedback": feedback or ["Gut getroffen!"],
     }

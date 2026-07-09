@@ -115,7 +115,9 @@ nicht zu streng wird) und aktualisiert die TargetSegments.
      Vokalviereck). Größere sd = die App wird nachsichtiger für
      diesen Laut in dieser Richtung.
 3. Die Ampel rechnet aus beiden Abweichungen zusammen: **grün** unter
-   2 Toleranzeinheiten, **gelb** unter 3,5, sonst **rot**.
+   2 Toleranzeinheiten, **gelb** unter 3,5, sonst **rot**. Der Vergleich
+   läuft auf der gehörgerechten **Bark-Skala** (Zielwerte bleiben in Hz;
+   nahe am Ziel bleibt die Bewertung praktisch wie zuvor).
 4. Speichern — die Änderung wirkt **sofort** für alle Nutzer
    (Bewertung, Hinweise, Vokalviereck), ganz ohne Neustart. Praktischer
    Ablauf: Wert ändern → in der App dasselbe Wort neu sprechen →
