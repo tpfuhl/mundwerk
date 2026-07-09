@@ -53,9 +53,12 @@ curl -X POST http://127.0.0.1:8000/api/recordings/ \
      -F item_id=2 -F speaker=male -F audio=@aufnahme.wav
 ```
 
-Antwort (`result.segments[]`): pro Fokus-Phone `f1/f2` (gemessen),
-`target_f1/f2`, `z_f1/z_f2`, `distanz`, `rating` (grün/gelb/rot),
-`feedback` (artikulatorische Hinweise), `start/end` (Segment in s).
+Antwort (`result.segments[]`): pro Fokus-Phone `f1/f2` (gemessen und
+bewertet), `f3`, `dauer_ms`, `intensitaet_db` (gemessen, noch nicht
+bewertet — Lippenrundung/Quantität/Wortakzent), `target_f1/f2`,
+`z_f1/z_f2`, `distanz`, `rating` (grün/gelb/rot), `feedback`
+(artikulatorische Hinweise), `start/end` (Segment in s). Gemessen wird
+im mittleren Drittel des Segments (Koartikulation an den Rändern).
 
 Bei Wort-Items mit Soll-Lautung (`mfa_pron`) zusätzlich
 `result.lautfolge`: `soll`/`ist` (Phonfolgen), `abweichungen`
@@ -117,6 +120,17 @@ nicht zu streng wird) und aktualisiert die TargetSegments.
    (Bewertung, Hinweise, Vokalviereck), ganz ohne Neustart. Praktischer
    Ablauf: Wert ändern → in der App dasselbe Wort neu sprechen →
    prüfen, ob das Urteil jetzt stimmt.
+
+**Korrekturtexte** im Admin unter **Api → Feedback rules**: pro Laut,
+Formant (F1/F2) und Richtung (zu hoch / zu niedrig) ein Hinweissatz.
+Didaktische Konvention — die Artikulatoren nicht vermischen:
+
+- **F1 ↔ Mundöffnung** (Kiefer): „Mund weiter öffnen / fast schließen“.
+- **F2 ↔ Zunge horizontal**: „Zunge nach vorn schieben / zurückziehen“.
+- **Rundung/F3 ↔ Lippen**: „Lippen runden“.
+
+Also z. B. „Mund fast schließen, Zunge vorn“ statt „Zunge nach oben“.
+Fehlt eine Regel, greift der eingebaute Text; Änderungen wirken sofort.
 
 ### 3. Wortlisten pflegen
 

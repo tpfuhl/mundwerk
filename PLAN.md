@@ -166,6 +166,9 @@ formants = snd.to_formant_burg(max_number_of_formants=5,
 
 4. **Segmentdiagnose statt Wort-Urteil** — siehe eigener Abschnitt unten;
    Antwort auf Kirstens Grundsatzkritik (Juli 2026).
+5. **Kurskorrektur „Lautebene zuerst“** — siehe eigener Abschnitt unten
+   (Kirsten, Juli 2026): Feedback-Sprache, F3/Dauer/Intensität,
+   Vokal-Curriculum mit Referenz-Audio, sprecherunabhängige Bewertung.
 
 - **Phase 2:** Kurzvokale, Umlaut-Minimalpaare, Vokalviereck-Visualisierung
   (Ist vs. Soll als Punkt im F1/F2-Raum).
@@ -206,7 +209,9 @@ Warum das heutige System die beiden Fälle so behandelt:
 `mfa_pron`, `error_variants`; Varianten-Lexikon in `analysis/alignment.py`;
 `result.lautfolge` mit benannten Abweichungen; Seeds: 7 Laut-Items +
 „früh“ mit Fehlervarianten). Es fehlen: App-UI (Laut-Übungen anbieten,
-`lautfolge`/Hinweis anzeigen) und Schritt 3 + 4.*
+`lautfolge`/Hinweis anzeigen) und Schritt 3 + 4. — Nach Kirstens
+Kurskorrektur (nächster Abschnitt) ruht die Wortebene vorerst; das
+Alignment bleibt als Infrastruktur bestehen.*
 
 ### Schritt 1 — Isolierte Laute als eigener Übungstyp (didaktisch, sofort)
 Neuer Item-Typ „Laut“ (isolierte Vokale, später haltbare Konsonanten
@@ -250,6 +255,85 @@ was *tatsächlich* gesagt wurde; Levenshtein-Abgleich mit der Ziel-IPA
 liefert Einfügungen/Auslassungen/Substitutionen. Erst angehen, wenn
 Schritt 2 an Grenzen stößt — die Variantenlösung deckt die häufigen,
 didaktisch erklärbaren Fälle bereits ab und bleibt deutbar.
+
+## Kurskorrektur: Lautebene zuerst (Kirsten, Juli 2026)
+
+**Leitprinzip (Kirsten, verbindlich): Mundwerk ist ein Lehr- und
+Lerntool und muss bei den kleinsten Einheiten beginnen — den isolierten
+Lauten — und sich von dort didaktisch hocharbeiten:**
+
+> Phone → offene Silben → geschlossene Silben → Wörter → Syntagmen → Sätze
+
+Die App wird auf diese Progression umgestellt; die isolierten Laute sind
+der Einstieg und für die nächste Zeit der alleinige Fokus. Die
+Wortkorrektur bleibt technisch erhalten, ist aber didaktisch verfrüht.
+
+**Warum Wort-Nachsprechen mit reiner Vokalmessung irreführt** (Kirstens
+Beleg): „Tee“ als „Che“ gesprochen (ch wie in „ach“) bekam grünes Licht.
+Beide Konsonanten sind stimmlos, das Wort einsilbig — die Formantmessung
+des /eː/ gelingt problemlos, also grün, obwohl der Anlaut komplett falsch
+ist. Setzt man einen stimmhaften Laut (z. B. Nasal) davor, verzerrt
+dessen Frequenz umgekehrt die Vokalmessung. **Fazit: Ohne verlässliche
+Segmentierung *und* Bewertung aller Laute ist ein Wort-Urteil nicht
+tragfähig.** Beim isolierten Laut stellt sich das Problem nicht — es
+gibt nur einen Laut, die Auto-Segmentierung genügt.
+
+Konkrete Einwände und was daraus folgt, in Umsetzungsreihenfolge:
+
+### 1. Wortebene ruht
+Solange pro Wort nur ein Fokusvokal bewertet wird, suggeriert das
+Wort-Urteil mehr, als gemessen wurde („komplett richtig?“ kann die App
+nicht beantworten; siehe „Tee“/„Che“). Wort-Items und
+Fehlerhypothesen-Alignment bleiben als Infrastruktur, aber Kuratierung,
+Feinschliff und App-UI konzentrieren sich auf die isolierten Vokale.
+(Mehrere focus_segments
+pro Item kann das Backend übrigens schon — die Seeds nutzen es nur
+nicht.)
+
+### 2. Feedback-Sprache nach Artikulatoren trennen (klein, sofort)
+Didaktische Konvention für alle Hinweistexte:
+- **F1 ↔ Mundöffnung** (Kiefer) — nicht „Zungenhöhe“,
+- **F2 ↔ Zunge** horizontal (vorn/hinten),
+- **F3/Rundung ↔ Lippen**.
+Schema „Mund …, Zunge …, Lippen …“ statt der bisherigen Mischung.
+Dazu: Feedbacktexte aus `reference_formants.py` in die DB verlagern,
+damit Kirsten sie im Admin formuliert (analog zu den Zielwerten).
+
+### 3. Mehr Messgrößen: F3, Dauer, Intensität (klein, sofort)
+Messzentrum ist gesichert (Median über das mittlere Drittel — bereits
+implementiert), aber pro Segment zusätzlich messen und speichern:
+- **F3** (Lippenrundung; fließt in die /yː øː uː oː/-Bewertung ein),
+- **Dauer** (Lang/Kurz-Opposition, Phase 2),
+- **Intensität** (Wortakzent später: úmfahren/umfáhren — primär
+  Lautstärke, sekundär Länge; Formanten unterscheiden die beiden nicht).
+Alles Parselmouth-Standard (`to_intensity`, Segmentgrenzen, Formant 3).
+Erst speichern, später bewerten.
+
+### 4. Vokal-Curriculum nach dem Vokaltrapez (App-UI)
+Drei Gruppen als Lernpfad, innerhalb der Gruppe variiert primär der
+Öffnungsgrad (Kiefer):
+1. vordere ungerundete Vokale /iː eː/,
+2. vordere gerundete /yː øː/ (Zunge wie Gruppe 1, nur Lippen runden),
+3. hintere gerundete /uː oː/ (+ /aː/ als offener Sonderfall).
+Pro Laut **vor** der Übung: Artikulationserklärung mit
+Sagittalschnitt-Grafik (erst statisch, später animiert) und
+**Referenz-Audio** zum Nachsprechen → neues Feld `Item.reference_audio`
+(Kirsten spricht ein, Upload im Admin), App spielt es ab.
+
+### 5. Sprecherunabhängige Bewertung statt male/female-Hz-Tabellen
+Kirstens Punkt: ein /aː/ bleibt ein /aː/, egal wer spricht — es zählen
+die Relationen, nicht absolute Frequenzen. Operationalisierung:
+- kurzfristig: Vergleich im **Bark-Raum** (gehörgerechte, logarithmische
+  Skala) statt roher Hz — dämpft den Stimmlagen-Effekt deutlich;
+- mittelfristig: **Lobanov-Normalisierung** nach kurzer
+  Onboarding-Kalibrierung (User spricht /aː iː uː/) — ersetzt die
+  Stimmlagen-Auswahl komplett und ist der Standard der Soziophonetik.
+- Nüchtern anzumerken: der rohe Abstand F2−F1 in Hz ist selbst *nicht*
+  sprecherunabhängig; Bark/Lobanov/Nearey sind genau die sauberen
+  Formalisierungen der „relativen Abstände“. Und bei hoher
+  Grundfrequenz (Kinder) bleibt Formantmessung prinzipiell unschärfer
+  (weit auseinanderliegende Harmonische) — daran ändert auch
+  Normalisierung nichts.
 
 ## Offene Punkte
 

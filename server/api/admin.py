@@ -1,6 +1,14 @@
 from django.contrib import admin
 
-from .models import Item, LearnerProfile, Recording, TargetSegment
+from .models import (FeedbackRule, Item, LearnerProfile, Recording,
+                     TargetSegment)
+
+
+@admin.register(FeedbackRule)
+class FeedbackRuleAdmin(admin.ModelAdmin):
+    list_display = ("phone", "dim", "direction", "text")
+    list_filter = ("phone", "dim", "direction")
+    search_fields = ("text",)
 
 
 @admin.register(LearnerProfile)

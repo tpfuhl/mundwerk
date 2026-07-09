@@ -70,6 +70,33 @@ class TargetSegment(models.Model):
         return f"/{self.phone}/ ({self.speaker})"
 
 
+class FeedbackRule(models.Model):
+    """Kuratierbare Hinweistexte für Formant-Abweichungen (Expertenwissen).
+
+    Didaktische Konvention (Kirsten): Artikulatoren strikt trennen —
+    F1 ↔ Mundöffnung, F2 ↔ Zunge horizontal, Rundung ↔ Lippen.
+    Per Seed-Migration aus analysis/reference_formants.py befüllt und im
+    Admin kuratierbar; fehlt eine Regel, greift der Code-Fallback
+    (feedback_for). Änderungen wirken sofort, ohne Deployment.
+    """
+
+    DIM_CHOICES = [("f1", "F1 (Mundöffnung)"), ("f2", "F2 (Zunge horizontal)")]
+    DIRECTION_CHOICES = [("high", "zu hoch"), ("low", "zu niedrig")]
+
+    phone = models.CharField(max_length=10)  # IPA
+    dim = models.CharField(max_length=4, choices=DIM_CHOICES)
+    direction = models.CharField(max_length=4, choices=DIRECTION_CHOICES)
+    text = models.TextField(
+        help_text="Hinweis an die Lernenden — Schema „Mund …, Zunge …, "
+                  "Lippen …“, die Artikulatoren nicht vermischen.")
+
+    class Meta:
+        unique_together = [("phone", "dim", "direction")]
+
+    def __str__(self):
+        return f"/{self.phone}/ {self.dim} {self.direction}"
+
+
 class LearnerProfile(models.Model):
     """Zusatzdaten zum Django-User. Die Muttersprache (ISO 639-1) steuert
     später die L1-spezifischen Übungspfade und Fehlerhypothesen."""

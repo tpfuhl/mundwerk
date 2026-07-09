@@ -58,31 +58,59 @@ def find_voiced_segment(snd: parselmouth.Sound) -> tuple[float, float]:
     return times[best[0]], times[best[1] - 1]
 
 
-def measure_segment(formants, start: float, end: float) -> tuple[float, float]:
-    """Median von F1/F2 über das mittlere Drittel von [start, end]."""
+def measure_segment(formants, start: float,
+                    end: float) -> tuple[float, float, float | None]:
+    """Median von F1/F2/F3 über das mittlere Drittel von [start, end].
+
+    Gemessen wird bewusst im Zentrum des Segments — an den Rändern steckt
+    die Koartikulation (der Folgelaut ist im Formantverlauf schon da).
+    F3 (Lippenrundung) ist oft schlechter messbar → None statt Fehler.
+    """
     third = (end - start) / 3
     lo, hi = start + third, end - third
     n = 10
     step = (hi - lo) / (n - 1) if n > 1 else 0
-    f1s, f2s = [], []
+    f1s, f2s, f3s = [], [], []
     for i in range(n):
         t = lo + i * step
         f1 = formants.get_value_at_time(1, t)
         f2 = formants.get_value_at_time(2, t)
+        f3 = formants.get_value_at_time(3, t)
         if f1 == f1:
             f1s.append(f1)
         if f2 == f2:
             f2s.append(f2)
+        if f3 == f3:
+            f3s.append(f3)
     if not f1s or not f2s:
         raise AnalysisError("Keine Formanten messbar in diesem Segment.")
-    return statistics.median(f1s), statistics.median(f2s)
+    return (statistics.median(f1s), statistics.median(f2s),
+            statistics.median(f3s) if f3s else None)
+
+
+def measure_intensity(snd: parselmouth.Sound, start: float,
+                      end: float) -> float | None:
+    """Mittlere Intensität (dB) über das mittlere Drittel; None wenn
+    nicht messbar. Wird (wie die Dauer) vorerst nur gespeichert —
+    Bewertung kommt mit dem Wortakzent (úmfahren/umfáhren)."""
+    third = (end - start) / 3
+    try:
+        intensity = snd.to_intensity(time_step=0.01)
+        db = call(intensity, "Get mean", start + third, end - third, "dB")
+    except parselmouth.PraatError:
+        return None
+    return round(db, 1) if db == db else None
 
 
 def evaluate(phone: str, f1: float, f2: float,
-             target: tuple[float, float, float, float] | None) -> dict:
+             target: tuple[float, float, float, float] | None,
+             feedback_fn=feedback_for) -> dict:
     """Messwerte gegen Referenz (f1_mean, f1_sd, f2_mean, f2_sd) vergleichen.
 
     target=None → kein Referenzwert vorhanden, nur Messwerte zurückgeben.
+    feedback_fn(phone, dim, direction) liefert die Hinweistexte — das
+    Django-Backend reicht hier die DB-kuratierten Regeln (FeedbackRule)
+    herein, Default sind die Code-Texte.
     """
     if target is None:
         return {"phone": phone, "f1": round(f1), "f2": round(f2),
@@ -97,7 +125,7 @@ def evaluate(phone: str, f1: float, f2: float,
     # Größte Abweichung zuerst kommentieren, nur Abweichungen > 1.5 SD.
     for dim, z in sorted((("f1", z1), ("f2", z2)), key=lambda p: -abs(p[1])):
         if abs(z) > 1.5:
-            feedback.append(feedback_for(phone, dim, "high" if z > 0 else "low"))
+            feedback.append(feedback_fn(phone, dim, "high" if z > 0 else "low"))
 
     return {
         "phone": phone,
@@ -112,22 +140,30 @@ def evaluate(phone: str, f1: float, f2: float,
 
 def analyze_recording(path: str, phone: str, speaker: str = "male",
                       target: tuple[float, float, float, float] | None = None,
-                      segment: tuple[float, float] | None = None) -> dict:
+                      segment: tuple[float, float] | None = None,
+                      feedback_fn=feedback_for) -> dict:
     """Komplette Pipeline für eine Aufnahme mit einem Zielvokal.
 
     Ohne `segment` wird der Vokal automatisch gesucht (längster stimmhafter
-    Abschnitt) — bis Forced Alignment (MFA) integriert ist, funktioniert das
-    zuverlässig nur für isoliert gehaltene Vokale bzw. vokaldominante Wörter.
+    Abschnitt) — zuverlässig für isoliert gehaltene Vokale bzw.
+    vokaldominante Wörter; sonst kommt das Segment vom MFA-Alignment.
     Ohne `target` werden die eingebauten Literaturwerte benutzt.
+
+    Neben F1/F2 (bewertet) werden F3, Dauer und Intensität gemessen und
+    nur gespeichert (Lippenrundung, Quantität, Wortakzent — Bewertung
+    folgt in späteren Phasen).
     """
     snd = load_sound(path)
     formants = snd.to_formant_burg(max_number_of_formants=5,
                                    maximum_formant=MAX_FORMANT[speaker])
     start, end = segment if segment else find_voiced_segment(snd)
-    f1, f2 = measure_segment(formants, start, end)
+    f1, f2, f3 = measure_segment(formants, start, end)
     if target is None:
         target = TARGETS.get(phone, {}).get(speaker)
-    result = evaluate(phone, f1, f2, target)
+    result = evaluate(phone, f1, f2, target, feedback_fn=feedback_fn)
+    result["f3"] = round(f3) if f3 is not None else None
+    result["dauer_ms"] = round((end - start) * 1000)
+    result["intensitaet_db"] = measure_intensity(snd, start, end)
     result["start"] = round(start, 3)
     result["end"] = round(end, 3)
     return result

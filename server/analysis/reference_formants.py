@@ -37,48 +37,52 @@ FEATURES = {
 
 # Spezifische Hinweise für typische Fehler, geprüft vor den generischen
 # Regeln. Schlüssel: (phone, dimension, richtung)  mit richtung "high"/"low".
+#
+# Didaktische Konvention (Kirsten): die Artikulatoren strikt trennen —
+# F1 ↔ Mundöffnung (Kiefer), F2 ↔ Zunge horizontal (vorn/hinten),
+# Rundung ↔ Lippen. Nie „Zungenhöhe“ für F1.
 SPECIFIC_FEEDBACK = {
     ("yː", "f2", "low"): (
-        "Das klang eher wie ‚u‘. Zungenposition wie bei ‚ie‘ halten "
-        "und nur die Lippen runden."
+        "Das klang eher wie ‚u‘. Die Zunge bleibt vorn wie bei ‚ie‘ — "
+        "nur die Lippen runden."
     ),
     ("øː", "f2", "low"): (
-        "Das klang eher wie ‚o‘. Zungenposition wie bei ‚ee‘ halten "
-        "und nur die Lippen runden."
+        "Das klang eher wie ‚o‘. Die Zunge bleibt vorn wie bei ‚ee‘ — "
+        "nur die Lippen runden."
     ),
     ("uː", "f2", "high"): (
-        "Die Zunge ist zu weit vorn oder die Lippen sind zu wenig "
-        "gerundet — ‚u‘ wird ganz hinten gebildet, Lippen stark runden."
+        "Die Zunge ist zu weit vorn — Zunge zurückziehen, "
+        "die Lippen stark runden."
     ),
     ("iː", "f1", "high"): (
-        "Der Mund ist zu weit offen — für ‚ie‘ die Zunge ganz nah an den "
-        "Gaumen bringen, fast wie bei ‚j‘."
+        "Der Mund ist zu weit offen — für ‚ie‘ den Mund fast schließen."
     ),
     ("aː", "f1", "low"): (
-        "Der Mund ist zu geschlossen — für ‚a‘ den Mund weit öffnen, "
-        "die Zunge bleibt flach unten."
+        "Der Mund ist zu geschlossen — für ‚a‘ den Mund weit öffnen."
     ),
 }
 
 
 def _generic_feedback(phone: str, dim: str, direction: str) -> str:
     feats = FEATURES.get(phone, {})
-    if dim == "f1":
+    if dim == "f1":  # Mundöffnung
         if direction == "high":
-            return "Der Mund ist zu weit offen bzw. die Zunge zu tief — Zunge etwas anheben."
-        return "Der Mund ist zu geschlossen — etwas weiter öffnen."
-    # f2
+            return "Der Mund ist zu weit offen — Mund etwas schließen."
+        return "Der Mund ist zu geschlossen — Mund etwas weiter öffnen."
+    # f2: Zunge horizontal (+ Lippen bei gerundeten Hinterzungenvokalen)
     if direction == "low":
-        if feats.get("front"):
-            return "Die Zunge ist zu weit hinten — weiter nach vorn schieben."
-        return "Die Zunge ist zu weit hinten für diesen Laut."
+        return "Die Zunge ist zu weit hinten — Zunge nach vorn schieben."
     if feats.get("round") and not feats.get("front"):
-        return "Die Zunge ist zu weit vorn — weiter zurückziehen, Lippen runden."
-    return "Die Zunge ist zu weit vorn für diesen Laut."
+        return ("Die Zunge ist zu weit vorn — Zunge zurückziehen, "
+                "die Lippen bleiben gerundet.")
+    return "Die Zunge ist zu weit vorn — Zunge zurückziehen."
 
 
 def feedback_for(phone: str, dim: str, direction: str) -> str:
-    """Feedbacktext für eine Abweichung (dim: 'f1'/'f2', direction: 'high'/'low')."""
+    """Feedbacktext für eine Abweichung (dim: 'f1'/'f2', direction: 'high'/'low').
+
+    Code-Fallback und Seed-Quelle — kuratiert werden die Texte in der DB
+    (api.models.FeedbackRule, Django-Admin)."""
     return SPECIFIC_FEEDBACK.get(
         (phone, dim, direction), _generic_feedback(phone, dim, direction)
     )

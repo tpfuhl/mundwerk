@@ -1,6 +1,7 @@
-"""Tests für die Segmentdiagnose (PLAN „Segmentdiagnose statt Wort-Urteil“):
-Lautfolgen-Diff, Varianten-Lexikon, Item-Typen und CSV-Import.
-Audio-/MFA-abhängige Pfade werden nicht getestet (→ validation/)."""
+"""Tests für Segmentdiagnose und Kurskorrektur „Lautebene zuerst“:
+Lautfolgen-Diff, Varianten-Lexikon, Item-Typen, CSV-Import,
+DB-kuratierte Feedback-Regeln und die Messgrößen F3/Dauer/Intensität.
+MFA-abhängige Pfade werden nicht getestet (→ validation/)."""
 
 import csv
 import io
@@ -12,9 +13,12 @@ from django.core.management import call_command
 from django.test import TestCase
 from rest_framework.test import APITestCase
 
-from analysis.alignment import diff_phones, write_lexicon
+from parselmouth.praat import call
 
-from .models import Item
+from analysis.alignment import diff_phones, write_lexicon
+from analysis.pipeline import analyze_recording, evaluate
+
+from .models import FeedbackRule, Item
 from .views import RecordingViewSet
 
 
@@ -158,3 +162,53 @@ class ImportItemsTests(TestCase):
         self.assertEqual(item.level, "A2")          # aktualisiert
         self.assertEqual(item.mfa_pron, "ʃ p ɛː t")   # unangetastet
         self.assertEqual(item.error_variants, ["ʃ p l ɛː t"])
+
+
+class FeedbackRuleTests(TestCase):
+    def test_seed_vollstaendig(self):
+        # 7 Vokale × F1/F2 × high/low = 28 Regeln (Seed 0009)
+        self.assertEqual(FeedbackRule.objects.count(), 28)
+
+    def test_db_text_vor_code_fallback(self):
+        FeedbackRule.objects.filter(
+            phone="iː", dim="f1", direction="high").update(
+            text="Mund fast schließen (kuratiert).")
+        self.assertEqual(
+            RecordingViewSet._feedback("iː", "f1", "high"),
+            "Mund fast schließen (kuratiert).")
+
+    def test_fallback_wenn_keine_regel(self):
+        # Laut ohne Seed-Regel → Code-Fallback (feedback_for), kein Fehler
+        text = RecordingViewSet._feedback("ɛː", "f2", "low")
+        self.assertIn("Zunge", text)
+
+    def test_evaluate_nutzt_feedback_fn(self):
+        result = evaluate("iː", f1=500, f2=2150, target=(280, 45, 2150, 180),
+                          feedback_fn=lambda p, d, r: f"FIXTEXT {p} {d} {r}")
+        self.assertEqual(result["rating"], "rot")
+        self.assertEqual(result["feedback"], ["FIXTEXT iː f1 high"])
+
+
+class MeasurementFieldsTests(TestCase):
+    """Pipeline liefert F3, Dauer und Intensität (synthetischer Vokal)."""
+
+    def _synth_vowel(self, f1, f2, path, duration=0.5, pitch=120):
+        f3 = max(2500.0, f2 + 400)
+        kg = call("Create KlattGrid from vowel", "v", duration, pitch,
+                  f1, 60, f2, 90, f3, 150, 3500, 0.05, 1000)
+        snd = call(kg, "To Sound")
+        call(snd, "Scale intensity", 70)
+        snd.save(path, "WAV")
+
+    def test_neue_messgroessen_vorhanden(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            wav = os.path.join(tmp, "i.wav")
+            self._synth_vowel(280, 2150, wav)
+            result = analyze_recording(wav, "iː", "male",
+                                       target=(280, 45, 2150, 180))
+        self.assertIsNotNone(result["f3"])
+        self.assertGreater(result["f3"], result["f2"])
+        # 0.5 s Vokal, Segment ~ Vollzeit → grob im Bereich
+        self.assertGreater(result["dauer_ms"], 200)
+        self.assertIsNotNone(result["intensitaet_db"])
+        self.assertEqual(result["rating"], "grün")

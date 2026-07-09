@@ -12,8 +12,10 @@ from rest_framework.views import APIView
 
 from analysis.alignment import AlignmentError, align, diff_phones
 from analysis.pipeline import AnalysisError, analyze_recording
+from analysis.reference_formants import feedback_for
 
-from .models import Item, LearnerProfile, Recording, TargetSegment
+from .models import (FeedbackRule, Item, LearnerProfile, Recording,
+                     TargetSegment)
 from .serializers import (ItemSerializer, ProfileUpdateSerializer,
                           RecordingSerializer, RegisterSerializer,
                           TargetSegmentSerializer)
@@ -132,6 +134,13 @@ class RecordingViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin,
                     break
         return out
 
+    @staticmethod
+    def _feedback(phone, dim, direction):
+        """Hinweistext aus der DB (Admin-kuratiert), Code-Fallback."""
+        rule = FeedbackRule.objects.filter(
+            phone=phone, dim=dim, direction=direction).first()
+        return rule.text if rule else feedback_for(phone, dim, direction)
+
     @classmethod
     def _analyze(cls, recording):
         results = []
@@ -146,7 +155,8 @@ class RecordingViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin,
                 result = analyze_recording(
                     recording.audio.path, phone, recording.speaker,
                     target=target.as_tuple() if target else None,
-                    segment=by_phone.get(phone))
+                    segment=by_phone.get(phone),
+                    feedback_fn=cls._feedback)
                 result["segmentierung"] = "mfa" if phone in by_phone else "auto"
                 results.append(result)
             recording.result = {"segments": results}
