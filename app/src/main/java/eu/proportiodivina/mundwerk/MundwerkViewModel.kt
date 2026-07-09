@@ -3,6 +3,7 @@ package eu.proportiodivina.mundwerk
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import eu.proportiodivina.mundwerk.audio.ReferencePlayer
 import eu.proportiodivina.mundwerk.audio.WavRecorder
 import eu.proportiodivina.mundwerk.data.ItemDto
 import eu.proportiodivina.mundwerk.data.MundwerkApi
@@ -25,11 +26,21 @@ import kotlinx.coroutines.withContext
 
 enum class Phase { LOADING, READY, RECORDING, ANALYZING }
 
+// SELECT = Laut-/Wort-Auswahl, PRACTICE = eine Übung. Registrierung und
+// Verlauf laufen über eigene Flags (needsRegistration, showHistory).
+enum class Screen { SELECT, PRACTICE }
+
 data class UiState(
     val items: List<ItemDto> = emptyList(),
     val index: Int = 0,
     val speaker: String = "male",
     val phase: Phase = Phase.LOADING,
+    // Übungstyp: "laut" (Einstieg, nach Vokaltrapez gruppiert) oder "wort".
+    val practiceKind: String = "laut",
+    val screen: Screen = Screen.SELECT,
+    // Referenz-Audio-Wiedergabe
+    val refAudioLoading: Boolean = false,
+    val refAudioPlaying: Boolean = false,
     val result: RecordingDto? = null,
     // Korpus-Mitglied? Dann darf die Aufnahme als Referenz markiert werden.
     val isKorpus: Boolean = false,
@@ -54,13 +65,28 @@ data class UiState(
     val historyError: String? = null,
 ) {
     val currentItem: ItemDto? get() = items.getOrNull(index)
+
+    /** Laut-Items nach Vokaltrapez-Gruppe, in didaktischer Reihenfolge;
+     *  jedes Item mit seinem Index in [items] (für openPractice). */
+    val itemsByGroup: List<Pair<String, List<Pair<Int, ItemDto>>>>
+        get() {
+            val indexed = items.withIndex().map { it.index to it.value }
+            return GROUP_ORDER.mapNotNull { gruppe ->
+                val members = indexed.filter { it.second.gruppe == gruppe }
+                if (members.isEmpty()) null else gruppe to members
+            }
+        }
 }
+
+// Reihenfolge der Vokaltrapez-Gruppen im Lernpfad.
+val GROUP_ORDER = listOf("vorn_ungerundet", "vorn_gerundet", "hinten_gerundet")
 
 class MundwerkViewModel(app: Application) : AndroidViewModel(app) {
 
     private val tokenStore = TokenStore(app)
     private val api = MundwerkApi.create(tokenProvider = { tokenStore.token })
     private val recorder = WavRecorder()
+    private val player = ReferencePlayer()
     private val targetCache = mutableMapOf<String, List<TargetDto>>()
 
     private val _state = MutableStateFlow(UiState())
@@ -107,9 +133,10 @@ class MundwerkViewModel(app: Application) : AndroidViewModel(app) {
         } else "Server nicht erreichbar: ${e.message}"
 
     fun loadItems() {
+        val kind = _state.value.practiceKind
         _state.update { it.copy(phase = Phase.LOADING, error = null) }
         viewModelScope.launch {
-            runCatching { api.items() }
+            runCatching { api.items(kind = kind) }
                 .onSuccess { items ->
                     _state.update { it.copy(items = items, index = 0, phase = Phase.READY) }
                 }
@@ -164,13 +191,79 @@ class MundwerkViewModel(app: Application) : AndroidViewModel(app) {
 
     fun selectItem(index: Int) {
         if (_state.value.phase == Phase.READY) {
-            _state.update { it.copy(index = index, result = null, error = null) }
+            player.stop()
+            _state.update { it.copy(index = index, result = null, error = null,
+                                    refAudioPlaying = false) }
         }
     }
 
     fun nextItem() = selectItem((_state.value.index + 1).mod(_state.value.items.size))
 
     fun previousItem() = selectItem((_state.value.index - 1).mod(_state.value.items.size))
+
+    /** Aus der Auswahl in die Übung wechseln. */
+    fun openPractice(index: Int) {
+        if (_state.value.phase != Phase.READY) return
+        player.stop()
+        _state.update { it.copy(index = index, screen = Screen.PRACTICE,
+                                result = null, error = null, refAudioPlaying = false) }
+    }
+
+    fun backToSelect() {
+        player.stop()
+        _state.update { it.copy(screen = Screen.SELECT, result = null,
+                                error = null, refAudioPlaying = false) }
+    }
+
+    /** Zwischen Laut- und Wortübungen umschalten (lädt die Liste neu). */
+    fun switchKind(kind: String) {
+        if (kind == _state.value.practiceKind) return
+        player.stop()
+        _state.update { it.copy(practiceKind = kind, screen = Screen.SELECT,
+                                items = emptyList(), result = null, error = null,
+                                refAudioPlaying = false) }
+        loadItems()
+    }
+
+    /** Referenz-Audio des aktuellen Items laden und abspielen (Toggle). */
+    fun playReference() {
+        val item = _state.value.currentItem ?: return
+        if (!item.has_audio) return
+        if (_state.value.refAudioPlaying) {
+            player.stop()
+            _state.update { it.copy(refAudioPlaying = false) }
+            return
+        }
+        _state.update { it.copy(refAudioLoading = true, error = null) }
+        viewModelScope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    val body = api.itemAudio(item.id)
+                    val file = File(getApplication<Application>().cacheDir,
+                                    "ref_${item.id}.wav")
+                    body.byteStream().use { input ->
+                        file.outputStream().use { input.copyTo(it) }
+                    }
+                    file
+                }
+            }
+                .onSuccess { file ->
+                    _state.update { it.copy(refAudioLoading = false,
+                                            refAudioPlaying = true) }
+                    player.play(file) {
+                        _state.update { s -> s.copy(refAudioPlaying = false) }
+                    }
+                }
+                .onFailure { e ->
+                    _state.update { it.copy(refAudioLoading = false,
+                                            error = "Vorsprechen nicht abspielbar: ${e.message}") }
+                }
+        }
+    }
+
+    override fun onCleared() {
+        player.stop()
+    }
 
     fun setSpeaker(speaker: String) {
         _state.update { it.copy(speaker = speaker, targets = emptyList()) }

@@ -8,6 +8,7 @@ import okhttp3.OkHttpClient
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.ResponseBody
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
@@ -18,6 +19,7 @@ import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
+import retrofit2.http.Streaming
 
 // DTOs — Feldnamen entsprechen exakt dem JSON der Django-API.
 
@@ -26,6 +28,10 @@ data class ItemDto(
     val text: String,
     val ipa: String,
     val level: String,
+    val kind: String = "wort",         // laut | wort | satz
+    val gruppe: String = "",           // Vokaltrapez-Gruppe (nur laut)
+    val beschreibung: String = "",     // Artikulationserklärung
+    val has_audio: Boolean = false,    // Referenz-Audio vorhanden?
     val focus_segments: List<String>,
 )
 
@@ -110,7 +116,15 @@ interface MundwerkApi {
     suspend fun register(@Body body: RegisterRequest): RegisterResponse
 
     @GET("api/items/")
-    suspend fun items(@Query("level") level: String? = null): List<ItemDto>
+    suspend fun items(
+        @Query("level") level: String? = null,
+        @Query("kind") kind: String? = null,
+        @Query("gruppe") gruppe: String? = null,
+    ): List<ItemDto>
+
+    @Streaming
+    @GET("api/items/{id}/audio/")
+    suspend fun itemAudio(@Path("id") id: Int): ResponseBody
 
     @GET("api/targets/")
     suspend fun targets(@Query("speaker") speaker: String): List<TargetDto>

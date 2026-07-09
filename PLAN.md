@@ -324,9 +324,16 @@ Sagittalschnitt-Grafik (erst statisch, später animiert) und
 (Upload im Admin). API: `?gruppe=`-Filter, `has_audio` im Serializer,
 authentifizierter Stream `GET /api/items/{id}/audio/` (Apache serviert
 `/media/` bewusst nicht). CSV-Import kennt `gruppe`/`beschreibung`.
-*Offen:* die App-UI (Punkt 5) — Gruppen als Lernpfad, Erklärung
-anzeigen, Referenz-Audio abspielen; Sagittalschnitt-Grafik noch nicht
-erstellt (Platzhalter bis Kirstens Grafiken vorliegen).
+
+*App umgesetzt (Punkt 5):* Die App startet jetzt auf der **Laut-Auswahl**
+(drei Vokaltrapez-Gruppen als Lernpfad). Pro Laut ein Übungs-Screen mit
+Artikulationserklärung und — sobald Referenz-Audio hochgeladen ist —
+einem „Vorsprechen anhören“-Knopf (`ReferencePlayer`, MediaPlayer).
+Wortübungen sind hinter den „Wörter“-Umschalter gerückt und tragen den
+ehrlichen Hinweis, dass nur der markierte Vokal bewertet wird. Auf echtem
+Gerät gegen die Produktion verifiziert.
+*Offen:* Sagittalschnitt-Grafiken (Platzhalter bis Kirstens Grafiken
+vorliegen); Referenz-Audios muss Kirsten im Admin einsprechen/hochladen.
 
 ### 5. Sprecherunabhängige Bewertung statt male/female-Hz-Tabellen
 Kirstens Punkt: ein /aː/ bleibt ein /aː/, egal wer spricht — es zählen

@@ -32,14 +32,9 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -129,6 +124,14 @@ fun PracticeScreen(modifier: Modifier = Modifier, vm: MundwerkViewModel = viewMo
         return
     }
 
+    val onRecordClick = {
+        val granted = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+        if (granted) vm.toggleRecording()
+        else micPermission.launch(Manifest.permission.RECORD_AUDIO)
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -146,74 +149,168 @@ fun PracticeScreen(modifier: Modifier = Modifier, vm: MundwerkViewModel = viewMo
         }
 
         if (state.items.isEmpty()) {
-            Text(state.error ?: "Keine Übungswörter gefunden.",
+            Text(state.error ?: "Keine Übungen gefunden.",
                  color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
             Button(onClick = { vm.loadItems() }) { Text("Erneut versuchen") }
             return@Column
         }
 
-        ItemDropdown(
-            items = state.items.map { "${it.text}  [${it.ipa}]" },
-            selectedIndex = state.index,
-            enabled = state.phase == Phase.READY,
-            onSelect = vm::selectItem,
-        )
-
-        SpeakerChips(state.speaker, enabled = state.phase == Phase.READY, vm::setSpeaker)
-
-        state.currentItem?.let { item ->
-            Spacer(Modifier.height(8.dp))
-            Text(item.text, style = MaterialTheme.typography.displayMedium,
-                 fontWeight = FontWeight.Bold)
-            Text("[${item.ipa}]", style = MaterialTheme.typography.titleLarge,
-                 color = MaterialTheme.colorScheme.secondary)
+        if (state.screen == Screen.SELECT) {
+            SelectionContent(state = state, vm = vm)
+        } else {
+            PracticeContent(state = state, vm = vm, onRecordClick = onRecordClick)
         }
-
-        RecordButton(
-            phase = state.phase,
-            onClick = {
-                val granted = ContextCompat.checkSelfPermission(
-                    context, Manifest.permission.RECORD_AUDIO
-                ) == PackageManager.PERMISSION_GRANTED
-                if (granted) vm.toggleRecording()
-                else micPermission.launch(Manifest.permission.RECORD_AUDIO)
-            },
-        )
-
-        state.error?.let {
-            Text(it, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
-        }
-
-        state.result?.result?.let { result ->
-            result.error?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
-            }
-            result.segments?.forEach { SegmentResultCard(it, state.targets) }
-        }
-
-        if (state.isKorpus && state.result?.status == "done") {
-            TextButton(onClick = vm::toggleReferenz,
-                       enabled = !state.referenzSaving) {
-                Text(stringResource(
-                    if (state.result?.ist_referenz == true) R.string.referenz_markiert
-                    else R.string.referenz_markieren))
-            }
-        }
-
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            OutlinedButton(onClick = vm::previousItem,
-                           enabled = state.phase == Phase.READY) { Text("← Zurück") }
-            OutlinedButton(onClick = vm::nextItem,
-                           enabled = state.phase == Phase.READY) { Text("Weiter →") }
-        }
-
-        OutlinedButton(onClick = vm::openHistory,
-                       enabled = state.phase == Phase.READY) { Text("📈  Verlauf") }
 
         Text("Version ${BuildConfig.VERSION_NAME}",
              style = MaterialTheme.typography.labelSmall,
              color = MaterialTheme.colorScheme.outline)
     }
+}
+
+private val GROUP_LABELS = mapOf(
+    "vorn_ungerundet" to "Vordere, ungerundete Vokale",
+    "vorn_gerundet" to "Vordere, gerundete Vokale",
+    "hinten_gerundet" to "Hintere, gerundete Vokale",
+)
+
+@Composable
+private fun SelectionContent(state: UiState, vm: MundwerkViewModel) {
+    val enabled = state.phase == Phase.READY
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FilterChip(selected = state.practiceKind == "laut",
+                   onClick = { vm.switchKind("laut") }, enabled = enabled,
+                   label = { Text("Laute") })
+        FilterChip(selected = state.practiceKind == "wort",
+                   onClick = { vm.switchKind("wort") }, enabled = enabled,
+                   label = { Text("Wörter") })
+    }
+    SpeakerChips(state.speaker, enabled = enabled, vm::setSpeaker)
+
+    if (state.practiceKind == "laut") {
+        Text("Wähle einen Laut. Übe dich von den einzelnen Lauten "
+             + "langsam zu Silben und Wörtern hoch.",
+             style = MaterialTheme.typography.bodyMedium,
+             color = MaterialTheme.colorScheme.onSurfaceVariant,
+             textAlign = TextAlign.Center)
+        val grouped = state.itemsByGroup
+        grouped.forEach { (gruppe, members) ->
+            Column(Modifier.fillMaxWidth(),
+                   verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(GROUP_LABELS[gruppe] ?: gruppe,
+                     style = MaterialTheme.typography.titleMedium,
+                     fontWeight = FontWeight.Bold,
+                     modifier = Modifier.fillMaxWidth())
+                members.forEach { (index, item) ->
+                    ItemRow(item) { vm.openPractice(index) }
+                }
+            }
+        }
+        // Laut-Items ohne Gruppe (Sonderfälle) unter „Weitere“.
+        val ungrouped = state.items.withIndex()
+            .filter { it.value.gruppe.isBlank() }
+        if (ungrouped.isNotEmpty()) {
+            Text("Weitere", style = MaterialTheme.typography.titleMedium,
+                 fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
+            ungrouped.forEach { (index, item) ->
+                ItemRow(item) { vm.openPractice(index) }
+            }
+        }
+    } else {
+        Text("Wortübungen. Hinweis: derzeit wird pro Wort nur der "
+             + "markierte Vokal bewertet.",
+             style = MaterialTheme.typography.bodyMedium,
+             color = MaterialTheme.colorScheme.onSurfaceVariant,
+             textAlign = TextAlign.Center)
+        state.items.forEachIndexed { index, item ->
+            ItemRow(item) { vm.openPractice(index) }
+        }
+    }
+}
+
+@Composable
+private fun ItemRow(item: eu.proportiodivina.mundwerk.data.ItemDto, onClick: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
+        Row(modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(item.text, style = MaterialTheme.typography.headlineMedium,
+                 fontWeight = FontWeight.Bold)
+            Text("[${item.ipa}]", style = MaterialTheme.typography.titleMedium,
+                 color = MaterialTheme.colorScheme.secondary)
+            Spacer(Modifier.weight(1f))
+            if (item.has_audio) Text("🔊", style = MaterialTheme.typography.titleMedium)
+            Text("›", style = MaterialTheme.typography.headlineSmall,
+                 color = MaterialTheme.colorScheme.outline)
+        }
+    }
+}
+
+@Composable
+private fun PracticeContent(
+    state: UiState,
+    vm: MundwerkViewModel,
+    onRecordClick: () -> Unit,
+) {
+    OutlinedButton(onClick = vm::backToSelect) {
+        Text("← Zurück zur Auswahl")
+    }
+
+    state.currentItem?.let { item ->
+        Text(item.text, style = MaterialTheme.typography.displayMedium,
+             fontWeight = FontWeight.Bold)
+        Text("[${item.ipa}]", style = MaterialTheme.typography.titleLarge,
+             color = MaterialTheme.colorScheme.secondary)
+
+        if (item.beschreibung.isNotBlank()) {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Text(item.beschreibung, modifier = Modifier.padding(16.dp),
+                     style = MaterialTheme.typography.bodyLarge)
+            }
+        }
+
+        if (item.has_audio) {
+            OutlinedButton(onClick = vm::playReference,
+                           enabled = !state.refAudioLoading) {
+                if (state.refAudioLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.size(8.dp))
+                }
+                Text(if (state.refAudioPlaying) "⏹  Vorsprechen stoppen"
+                     else "🔊  Vorsprechen anhören")
+            }
+        }
+    }
+
+    RecordButton(phase = state.phase, onClick = onRecordClick)
+
+    state.error?.let {
+        Text(it, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
+    }
+
+    state.result?.result?.let { result ->
+        result.error?.let {
+            Text(it, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
+        }
+        result.segments?.forEach { SegmentResultCard(it, state.targets) }
+    }
+
+    if (state.isKorpus && state.result?.status == "done") {
+        TextButton(onClick = vm::toggleReferenz, enabled = !state.referenzSaving) {
+            Text(stringResource(
+                if (state.result?.ist_referenz == true) R.string.referenz_markiert
+                else R.string.referenz_markieren))
+        }
+    }
+
+    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        OutlinedButton(onClick = vm::previousItem,
+                       enabled = state.phase == Phase.READY) { Text("← Voriger") }
+        OutlinedButton(onClick = vm::nextItem,
+                       enabled = state.phase == Phase.READY) { Text("Nächster →") }
+    }
+
+    OutlinedButton(onClick = vm::openHistory,
+                   enabled = state.phase == Phase.READY) { Text("📈  Verlauf") }
 }
 
 @Composable
@@ -285,40 +382,6 @@ private fun UeberDialog(onClose: () -> Unit) {
                      style = MaterialTheme.typography.labelSmall)
             }
         })
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ItemDropdown(
-    items: List<String>,
-    selectedIndex: Int,
-    enabled: Boolean,
-    onSelect: (Int) -> Unit,
-) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { if (enabled) expanded = it },
-    ) {
-        OutlinedTextField(
-            value = items.getOrElse(selectedIndex) { "" },
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("Übungswort") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-            modifier = Modifier
-                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-                .fillMaxWidth(),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            items.forEachIndexed { i, label ->
-                DropdownMenuItem(
-                    text = { Text(label) },
-                    onClick = { onSelect(i); expanded = false },
-                )
-            }
-        }
-    }
 }
 
 @Composable

@@ -23,18 +23,22 @@
 
     <!-- Hilfe-Dialog -->
     <string name="hilfe_titel">So funktioniert Mundwerk</string>
-    <string name="hilfe_schritt_1">1. Wähle oben ein Übungswort und deine
-        Stimmlage (tiefe/hohe Stimme) — danach richten sich die Zielwerte.</string>
-    <string name="hilfe_schritt_2">2. Tippe auf „Aufnehmen“, sprich das Wort
-        deutlich ins Mikrofon und tippe dann auf „Stopp &amp; auswerten“.</string>
+    <string name="hilfe_schritt_1">1. Beginne bei den einzelnen Lauten:
+        Wähle deine Stimmlage (tiefe/hohe Stimme) und tippe einen Vokal
+        aus einer der drei Gruppen an. Von den Lauten arbeitest du dich
+        später zu Silben und Wörtern hoch.</string>
+    <string name="hilfe_schritt_2">2. Lies die Erklärung (Mund, Zunge,
+        Lippen) und höre — wenn vorhanden — das Vorsprechen an. Tippe dann
+        auf „Aufnehmen“, sprich den Laut deutlich und tippe auf
+        „Stopp &amp; auswerten“.</string>
     <string name="hilfe_schritt_3">3. Du bekommst sofort Feedback: die Ampel
         zeigt, wie nah du an der deutschen Standardaussprache bist, dazu
         konkrete Hinweise (z. B. „Lippen runden“) und das Vokalviereck —
         dein Punkt sollte in der markierten Zielzone liegen.</string>
-    <string name="hilfe_schritt_4">4. Mit „Weiter“ kommst du zum nächsten
-        Wort; unter „Verlauf“ siehst du deinen Fortschritt pro Laut.</string>
+    <string name="hilfe_schritt_4">4. Mit „Nächster“ kommst du zum nächsten
+        Laut; unter „Verlauf“ siehst du deinen Fortschritt pro Laut.</string>
     <string name="hilfe_tipp">Tipp: Übe in ruhiger Umgebung, sprich normal
-        laut und dehne den Vokal nicht künstlich.</string>
+        laut und halte den Laut ruhig und gleichmäßig.</string>
 
     <!-- Über-Dialog -->
     <string name="ueber_titel">Über Mundwerk</string>
