@@ -2,6 +2,7 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.http import FileResponse, Http404
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
@@ -36,7 +37,24 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
         kind = self.request.query_params.get("kind")
         if kind:
             qs = qs.filter(kind=kind)
+        gruppe = self.request.query_params.get("gruppe")
+        if gruppe:
+            qs = qs.filter(gruppe=gruppe)
         return qs
+
+    @action(detail=True, methods=["get"])
+    def audio(self, request, pk=None):
+        """GET /api/items/{id}/audio/ — Referenz-Audio streamen.
+
+        Nötig, weil Apache /media/ bewusst nicht ausliefert (dort liegen
+        auch private Nutzeraufnahmen). Referenz-Audio ist kuratierter
+        Inhalt, aber ebenfalls nur mit gültigem Token abrufbar.
+        """
+        item = self.get_object()
+        if not item.reference_audio:
+            raise Http404("Kein Referenz-Audio für dieses Item.")
+        return FileResponse(item.reference_audio.open("rb"),
+                            content_type="audio/wav")
 
 
 class TargetViewSet(viewsets.ReadOnlyModelViewSet):

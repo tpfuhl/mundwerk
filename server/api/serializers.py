@@ -35,9 +35,16 @@ class ProfileUpdateSerializer(serializers.Serializer):
 
 
 class ItemSerializer(serializers.ModelSerializer):
+    has_audio = serializers.SerializerMethodField()
+
     class Meta:
         model = Item
-        fields = ["id", "text", "ipa", "level", "kind", "focus_segments"]
+        fields = ["id", "text", "ipa", "level", "kind", "gruppe",
+                  "beschreibung", "has_audio", "focus_segments"]
+
+    def get_has_audio(self, item):
+        # True → App darf /api/items/{id}/audio/ abrufen (auth. Streaming).
+        return bool(item.reference_audio)
 
 
 class RecordingSerializer(serializers.ModelSerializer):

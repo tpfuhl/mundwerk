@@ -1,13 +1,14 @@
-text,ipa,level,focus,kind,pron,varianten
-ie,iː,A1,iː,laut,,
-üh,yː,A1,yː,laut,,
-Sie,ziː,A1,iː,wort,,
-früh,fʁyː,A1,yː,wort,f ʁ yː,f l yː | f k yː | f yː
-Kuh,kuː,A1,uː,wort,,
-Tee,teː,A1,eː,wort,,
-Fön,føːn,A1,øː,wort,,
-Zoo,tsoː,A1,oː,wort,,
-Tag,taːk,A1,aː,wort,,
-Miete,ˈmiːtə,A1,iː,wort,,
-Süden,ˈzyːdən,A2,yː,wort,,
-Höhle,ˈhøːlə,A2,øː,wort,,
+text,ipa,level,focus,kind,gruppe,beschreibung,pron,varianten
+ie,iː,A1,iː,laut,vorn_ungerundet,"Mund fast geschlossen, Zunge weit vorn und hoch, Lippen breit.",,
+üh,yː,A1,yː,laut,vorn_gerundet,"Zunge vorn wie bei ‚ie‘ — dabei die Lippen runden.",,
+uh,uː,A1,uː,laut,hinten_gerundet,"Mund fast geschlossen, Zunge weit hinten, Lippen stark gerundet.",,
+Sie,ziː,A1,iː,wort,,,,
+früh,fʁyː,A1,yː,wort,,,f ʁ yː,f l yː | f k yː | f yː
+Kuh,kuː,A1,uː,wort,,,,
+Tee,teː,A1,eː,wort,,,,
+Fön,føːn,A1,øː,wort,,,,
+Zoo,tsoː,A1,oː,wort,,,,
+Tag,taːk,A1,aː,wort,,,,
+Miete,ˈmiːtə,A1,iː,wort,,,,
+Süden,ˈzyːdən,A2,yː,wort,,,,
+Höhle,ˈhøːlə,A2,øː,wort,,,,

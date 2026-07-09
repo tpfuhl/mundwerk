@@ -34,8 +34,10 @@ Alle Endpoints außer `register` verlangen `Authorization: Token <key>`.
 ```
 POST /api/register/           {vorname, nachname, nickname, muttersprache}
                               → 201 {token, nickname}  (offen, Rate-Limit)
-GET  /api/items/?level=A1&kind=laut   Übungen (kind: laut|wort|satz)
-GET  /api/items/{id}/
+GET  /api/items/?level=A1&kind=laut&gruppe=vorn_ungerundet   Übungen
+                              (kind: laut|wort|satz; gruppe: Vokaltrapez)
+GET  /api/items/{id}/         inkl. gruppe, beschreibung, has_audio
+GET  /api/items/{id}/audio/   Referenz-Audio (WAV, nur wenn has_audio)
 GET  /api/targets/?speaker=…  Referenzformanten (fürs Vokalviereck)
 GET  /api/profile/            Übungsstatistik pro Laut + Profildaten
 PUT  /api/profile/            {vorname, nachname, muttersprache} —
@@ -155,6 +157,11 @@ Optionale Spalten (Segmentdiagnose, siehe PLAN.md):
 
 - `kind` — `laut` (isoliert gehaltener Laut, Einstiegsübungen),
   `wort` (Default) oder `satz`.
+- `gruppe` — Vokaltrapez-Gruppe für Laut-Übungen:
+  `vorn_ungerundet` (ie, ee), `vorn_gerundet` (üh, öh),
+  `hinten_gerundet` (uh, oh, ah).
+- `beschreibung` — Artikulationserklärung, die der Übung vorangestellt
+  wird (Schema „Mund …, Zunge …, Lippen …“).
 - `pron` — Soll-Lautung in MFA-Phonen, leerzeichengetrennt: `f ʁ yː`.
 - `varianten` — typische Fehlaussprachen, durch `|` getrennt:
   `f l yː | f k yː | f yː`. Die App aligniert dann gegen alle Varianten
@@ -167,6 +174,13 @@ Fehlt eine optionale Spalte in der CSV, bleiben die im Admin gepflegten
 Werte unangetastet. Achtung: `pron`/`varianten` müssen Phone aus dem
 `german_mfa`-Phonset verwenden, sonst scheitert das Alignment und die
 App fällt auf die Auto-Segmentierung zurück (Warnung im Server-Log).
+
+**Referenz-Audio** (Vorsprech-Aufnahme pro Laut) wird nicht per CSV,
+sondern im Admin hochgeladen: **Api → Items → Laut wählen → Feld
+„Reference audio“**. Am besten dieselbe Qualität wie die App-Aufnahmen
+(WAV, 16 kHz, mono). Die App zeigt dann einen Abspiel-Knopf
+(`has_audio` wird `true`); ausgeliefert wird die Datei nur mit gültigem
+Token über `/api/items/{id}/audio/`.
 
 Das Kommando läuft auf dem Server — Kirsten schickt ihre CSV einfach
 an Thomas, der sie einspielt (oder pflegt kleinere Änderungen selbst

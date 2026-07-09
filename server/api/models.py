@@ -7,12 +7,34 @@ class Item(models.Model):
 
     KIND_CHOICES = [("laut", "laut"), ("wort", "wort"), ("satz", "satz")]
 
+    # Vokaltrapez-Gruppen als Lernpfad (PLAN „Vokal-Curriculum“). Innerhalb
+    # einer Gruppe variiert primär der Öffnungsgrad (Kiefer).
+    GRUPPE_CHOICES = [
+        ("vorn_ungerundet", "vordere, ungerundete Vokale"),
+        ("vorn_gerundet", "vordere, gerundete Vokale"),
+        ("hinten_gerundet", "hintere, gerundete Vokale"),
+    ]
+
     text = models.CharField(max_length=200)
     ipa = models.CharField(max_length=200, help_text="IPA-Transkription")
     level = models.CharField(max_length=10, default="A1")  # A1..C2
     # "laut" = isoliert gehaltener Laut (kein Alignment, Auto-Segmentierung),
     # "wort"/"satz" = MFA-Alignment. PLAN „Segmentdiagnose“, Schritt 1.
     kind = models.CharField(max_length=10, choices=KIND_CHOICES, default="wort")
+    # Vokaltrapez-Gruppe (nur für Laut-Items relevant, sonst leer) — steuert
+    # die Anordnung des Lernpfads in der App.
+    gruppe = models.CharField(max_length=20, choices=GRUPPE_CHOICES,
+                              blank=True, default="")
+    # Artikulationserklärung, die der Übung vorangestellt wird (Schema
+    # „Mund …, Zunge …, Lippen …“). Kuratiert von Kirsten.
+    beschreibung = models.TextField(blank=True, default="")
+    # Referenz-Audio zum Nachsprechen (Kirsten spricht ein, Upload im
+    # Admin). Liegt unter MEDIA_ROOT/reference/ und wird NICHT von
+    # prune_audio erfasst (das betrifft nur Recording.audio). Ausgeliefert
+    # über den authentifizierten Endpoint /api/items/{id}/audio/, weil
+    # Apache /media/ bewusst nicht serviert.
+    reference_audio = models.FileField(upload_to="reference/",
+                                       blank=True, null=True)
     # Phone(s), auf denen der Übungsfokus liegt, z. B. ["øː"].
     # Phase 1: genau ein Langvokal pro Item.
     focus_segments = models.JSONField(default=list)

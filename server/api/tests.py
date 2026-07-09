@@ -9,6 +9,7 @@ import os
 import tempfile
 
 from django.contrib.auth.models import User
+from django.core.files.base import ContentFile
 from django.core.management import call_command
 from django.test import TestCase
 from rest_framework.test import APITestCase
@@ -100,8 +101,9 @@ class ItemApiTests(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user("tester")
         self.client.force_authenticate(self.user)
-        Item.objects.create(text="ää", ipa="ɛː", kind="laut",
-                            focus_segments=["ɛː"])
+        self.laut = Item.objects.create(
+            text="ää", ipa="ɛː", kind="laut", gruppe="vorn_ungerundet",
+            beschreibung="Mund weit, Zunge vorn.", focus_segments=["ɛː"])
         Item.objects.create(text="spät", ipa="ʃpɛːt", kind="wort",
                             focus_segments=["ɛː"])
 
@@ -111,6 +113,37 @@ class ItemApiTests(APITestCase):
         self.assertEqual(len(laute), 1)
         self.assertEqual(laute[0]["kind"], "laut")
         self.assertTrue(all(i["kind"] == "laut" for i in data))
+
+    def test_curriculum_felder_im_serializer(self):
+        [item] = [i for i in self.client.get("/api/items/?kind=laut").json()
+                  if i["text"] == "ää"]
+        self.assertEqual(item["gruppe"], "vorn_ungerundet")
+        self.assertEqual(item["beschreibung"], "Mund weit, Zunge vorn.")
+        self.assertFalse(item["has_audio"])  # kein Referenz-Audio hochgeladen
+
+    def test_gruppe_filter(self):
+        Item.objects.create(text="uh", ipa="uː", kind="laut",
+                            gruppe="hinten_gerundet", focus_segments=["uː"])
+        data = self.client.get("/api/items/?gruppe=vorn_ungerundet").json()
+        self.assertTrue(all(i["gruppe"] == "vorn_ungerundet" for i in data))
+        self.assertIn("ää", [i["text"] for i in data])
+
+    def test_audio_404_ohne_datei(self):
+        r = self.client.get(f"/api/items/{self.laut.id}/audio/")
+        self.assertEqual(r.status_code, 404)
+
+    def test_audio_streamt_datei_und_has_audio(self):
+        self.laut.reference_audio.save(
+            "ää.wav", ContentFile(b"RIFF....WAVEfmt "), save=True)
+        try:
+            detail = self.client.get(f"/api/items/{self.laut.id}/").json()
+            self.assertTrue(detail["has_audio"])
+            r = self.client.get(f"/api/items/{self.laut.id}/audio/")
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r["Content-Type"], "audio/wav")
+            self.assertEqual(b"".join(r.streaming_content), b"RIFF....WAVEfmt ")
+        finally:
+            self.laut.reference_audio.delete(save=True)  # Testdatei aufräumen
 
 
 class ImportItemsTests(TestCase):

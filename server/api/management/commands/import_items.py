@@ -14,6 +14,11 @@ Optionale Spalten (PLAN „Segmentdiagnose“):
                 "f l yː | f k yː | f yː" (braucht pron; didaktische
                 Hinweise pro Variante werden im Admin gepflegt)
 
+Optionale Spalten (PLAN „Vokal-Curriculum“):
+    gruppe       — vorn_ungerundet | vorn_gerundet | hinten_gerundet
+    beschreibung — Artikulationserklärung (Mund/Zunge/Lippen)
+    (Referenz-Audio wird im Admin hochgeladen, nicht per CSV.)
+
 Trennzeichen Komma oder Semikolon (deutsches Excel/LibreOffice) werden
 automatisch erkannt, ebenso ein UTF-8-BOM. Existiert ein Wort bereits
 (gleicher text), wird es aktualisiert statt dupliziert.
@@ -31,6 +36,7 @@ from api.models import Item, TargetSegment
 REQUIRED = {"text", "ipa", "level", "focus"}
 LEVELS = {"A1", "A2", "B1", "B2", "C1", "C2"}
 KINDS = {"laut", "wort", "satz"}
+GRUPPEN = {"vorn_ungerundet", "vorn_gerundet", "hinten_gerundet"}
 
 
 class Command(BaseCommand):
@@ -92,6 +98,15 @@ class Command(BaseCommand):
                                           f"„{row['kind']}“ (laut|wort|satz)")
                             continue
                         defaults["kind"] = kind
+                    if "gruppe" in header:
+                        gruppe = (row.get("gruppe") or "").strip().lower()
+                        if gruppe and gruppe not in GRUPPEN:
+                            errors.append(f"Zeile {lineno}: unbekannte Gruppe "
+                                          f"„{row['gruppe']}“ ({'|'.join(sorted(GRUPPEN))})")
+                            continue
+                        defaults["gruppe"] = gruppe
+                    if "beschreibung" in header:
+                        defaults["beschreibung"] = (row.get("beschreibung") or "").strip()
                     if "pron" in header:
                         defaults["mfa_pron"] = " ".join(row.get("pron", "").split())
                     if "varianten" in header:

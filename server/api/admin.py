@@ -19,10 +19,14 @@ class LearnerProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ("text", "ipa", "kind", "level", "focus_segments",
-                    "mfa_pron", "hat_varianten")
-    list_filter = ("kind", "level")
+    list_display = ("text", "ipa", "kind", "gruppe", "level", "focus_segments",
+                    "hat_audio", "mfa_pron", "hat_varianten")
+    list_filter = ("kind", "gruppe", "level")
     search_fields = ("text", "ipa")
+
+    @admin.display(boolean=True, description="Referenz-Audio")
+    def hat_audio(self, item):
+        return bool(item.reference_audio)
 
     @admin.display(boolean=True, description="Fehlervarianten")
     def hat_varianten(self, item):

@@ -317,8 +317,16 @@ Drei Gruppen als Lernpfad, innerhalb der Gruppe variiert primär der
 3. hintere gerundete /uː oː/ (+ /aː/ als offener Sonderfall).
 Pro Laut **vor** der Übung: Artikulationserklärung mit
 Sagittalschnitt-Grafik (erst statisch, später animiert) und
-**Referenz-Audio** zum Nachsprechen → neues Feld `Item.reference_audio`
-(Kirsten spricht ein, Upload im Admin), App spielt es ab.
+**Referenz-Audio** zum Nachsprechen.
+
+*Server umgesetzt:* `Item.gruppe` (Trapez-Gruppe), `Item.beschreibung`
+(Artikulationserklärung, Seed für die 7 Laute), `Item.reference_audio`
+(Upload im Admin). API: `?gruppe=`-Filter, `has_audio` im Serializer,
+authentifizierter Stream `GET /api/items/{id}/audio/` (Apache serviert
+`/media/` bewusst nicht). CSV-Import kennt `gruppe`/`beschreibung`.
+*Offen:* die App-UI (Punkt 5) — Gruppen als Lernpfad, Erklärung
+anzeigen, Referenz-Audio abspielen; Sagittalschnitt-Grafik noch nicht
+erstellt (Platzhalter bis Kirstens Grafiken vorliegen).
 
 ### 5. Sprecherunabhängige Bewertung statt male/female-Hz-Tabellen
 Kirstens Punkt: ein /aː/ bleibt ein /aː/, egal wer spricht — es zählen
