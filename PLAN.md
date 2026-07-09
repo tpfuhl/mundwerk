@@ -164,6 +164,9 @@ formants = snd.to_formant_burg(max_number_of_formants=5,
    Phonetik-Konvention. Referenzpunkte kommen aus /api/targets/ (DB) —
    Kirstens Admin-Justierungen wirken direkt.
 
+4. **Segmentdiagnose statt Wort-Urteil** — siehe eigener Abschnitt unten;
+   Antwort auf Kirstens Grundsatzkritik (Juli 2026).
+
 - **Phase 2:** Kurzvokale, Umlaut-Minimalpaare, Vokalviereck-Visualisierung
   (Ist vs. Soll als Punkt im F1/F2-Raum).
 - **Phase 3:** Konsonanten — Formanten reichen nicht: Frikative brauchen
@@ -172,6 +175,75 @@ formants = snd.to_formant_burg(max_number_of_formants=5,
 - **Phase 4:** Sätze/Prosodie: Pitch-Kontur (`snd.to_pitch()`), Vergleich
   mit Referenzkontur per DTW (Akzent, Satzmelodie).
 - **Phase 5:** L1-spezifische Übungspfade, Userlexikon via G2P (MFA).
+
+## Segmentdiagnose statt Wort-Urteil (Plan, Juli 2026)
+
+Anstoß: Kirstens Befund am Wort „früh“ — **„flüh“ wird rot** (das
+stimmhafte /l/ gerät in bzw. verschiebt die Messung), **„fküh“ wird
+grün** (das /yː/ stimmt ja, und der Konsonant davor wird gar nicht
+geprüft). Grundsatzkritik: Das Wort ist als kleinste Einheit zu groß;
+bewertet und erklärt werden muss auf der Lautebene — beginnend bei
+isolierten Lauten, wie beim Schreiben jeder Fehler einzeln geortet wird.
+
+**Einordnung Praat/Parselmouth:** Parselmouth ist ein *Mess*-, kein
+*Erkennungs*werkzeug. Es beantwortet „**Wie** wurde ein Laut
+gesprochen?“ (Formanten, spektrale Momente, VOT, F0) — nicht
+„**Welcher** Laut wurde gesprochen?“. Für Letzteres braucht es
+Erkennung. Die Arbeitsteilung ist der eigentliche USP:
+**Erkennung ortet den Fehler, Parselmouth-Messung erklärt ihn
+artikulatorisch.** Beides zusammen leistet, was keine gängige App tut.
+
+Warum das heutige System die beiden Fälle so behandelt:
+- Geprüft werden nur die `focus_segments` des Items (Vokale). Ein
+  falscher Konsonant („fküh“) ist schlicht außerhalb des Messfensters →
+  fälschlich grün.
+- MFA aligniert *erzwungen*: Wer „flüh“ sagt, bekommt trotzdem f‑ʁ‑yː
+  ins TextGrid gestempelt; im Auto-Fallback (längster stimmhafter
+  Abschnitt) wandert das stimmhafte /l/ sogar direkt in die
+  Vokalmessung → fälschlich rot, und der wahre Fehler bleibt unbenannt.
+
+### Schritt 1 — Isolierte Laute als eigener Übungstyp (didaktisch, sofort)
+Neuer Item-Typ „Laut“ (isolierte Vokale, später haltbare Konsonanten
+/s ʃ ç x f v l m n ŋ/): Der Lernende klärt zuerst, welche Laute er kann
+und welche nicht — Kirstens Einstiegspunkt. Technisch der dankbarste
+Fall: kein Alignment nötig, die Auto-Segmentierung (längster
+stimmhafter/lauter Abschnitt) ist genau dafür gebaut. Progression dann
+Laut → Silbe/Minimalpaar → Wort → Phrase (Phonosyntaktik) →
+Satz/Prosodie (= bisherige Phase 4).
+
+### Schritt 2 — Fehlerhypothesen-Alignment: Substitutionen orten
+Klassisches Verfahren der Mispronunciation Detection („Extended
+Recognition Network“), passt exakt auf den vorhandenen Stack: Pro Item
+werden neben der Soll-Lautung die **typischen Fehlaussprachen als
+Aussprachevarianten** in ein eigenes MFA-Lexikon geschrieben —
+für „früh“ etwa `fʁyː | flyː | fkyː | fyː`. MFA wählt beim Alignment
+die akustisch beste Variante; wählt es eine Fehlervariante, ist der
+Fehler geortet **und benannt**: „Sie haben /l/ statt /ʁ/ gesprochen.“
+- Die Fehlerhypothesen (gern L1-spezifisch, → Phase 5) sind Kirstens
+  Domäne: neues Feld `error_variants` am Item, Pflege im Admin/CSV.
+- Kein neues Framework — nur ein generiertes Lexikon beim `align_one`.
+- Nebeneffekt: Die Vokalmessung wird robuster, weil die Segmentgrenzen
+  zur tatsächlich gesprochenen Lautfolge passen.
+
+### Schritt 3 — Alle Segmente bewerten, nicht nur den Fokusvokal
+Feedback pro Phon (Ampelleiste entlang des Wortes statt eines
+Gesamturteils). Vokale: Formanten wie bisher. Konsonanten sind mit
+Parselmouth messbar, aber mit anderen Messgrößen (präzisiert Phase 3):
+
+| Lautklasse | Messgröße (Parselmouth) | unterscheidet z. B. |
+|---|---|---|
+| Frikative | spektraler Schwerpunkt (CoG) + Streuung | /ç/ ↔ /ʃ/ ↔ /s/ |
+| Plosive | VOT (Burst→Stimmeinsatz), Stimmhaftigkeit | /d/ ↔ /t/, Aspiration |
+| Liquide | F3 + Formantverlauf, Stimmhaftigkeit | /l/ ↔ /ʁ/ |
+| Nasale | Nasal-Formant, Antiformant | /m/ ↔ /n/ ↔ /ŋ/ |
+
+### Schritt 4 (später) — Offener Phonemerkenner als Backstop
+Für Fehler, die niemand antizipiert hat: ein CTC-Phonemerkenner
+(z. B. wav2vec2 „espeak“-Phonemmodelle, CPU-tauglich) transkribiert,
+was *tatsächlich* gesagt wurde; Levenshtein-Abgleich mit der Ziel-IPA
+liefert Einfügungen/Auslassungen/Substitutionen. Erst angehen, wenn
+Schritt 2 an Grenzen stößt — die Variantenlösung deckt die häufigen,
+didaktisch erklärbaren Fälle bereits ab und bleibt deutbar.
 
 ## Offene Punkte
 
