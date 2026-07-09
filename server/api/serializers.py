@@ -37,7 +37,7 @@ class ProfileUpdateSerializer(serializers.Serializer):
 class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
-        fields = ["id", "text", "ipa", "level", "focus_segments"]
+        fields = ["id", "text", "ipa", "level", "kind", "focus_segments"]
 
 
 class RecordingSerializer(serializers.ModelSerializer):

@@ -1,11 +1,13 @@
-text,ipa,level,focus
-Sie,ziː,A1,iː
-früh,fʁyː,A1,yː
-Kuh,kuː,A1,uː
-Tee,teː,A1,eː
-Fön,føːn,A1,øː
-Zoo,tsoː,A1,oː
-Tag,taːk,A1,aː
-Miete,ˈmiːtə,A1,iː
-Süden,ˈzyːdən,A2,yː
-Höhle,ˈhøːlə,A2,øː
+text,ipa,level,focus,kind,pron,varianten
+ie,iː,A1,iː,laut,,
+üh,yː,A1,yː,laut,,
+Sie,ziː,A1,iː,wort,,
+früh,fʁyː,A1,yː,wort,f ʁ yː,f l yː | f k yː | f yː
+Kuh,kuː,A1,uː,wort,,
+Tee,teː,A1,eː,wort,,
+Fön,føːn,A1,øː,wort,,
+Zoo,tsoː,A1,oː,wort,,
+Tag,taːk,A1,aː,wort,,
+Miete,ˈmiːtə,A1,iː,wort,,
+Süden,ˈzyːdən,A2,yː,wort,,
+Höhle,ˈhøːlə,A2,øː,wort,,

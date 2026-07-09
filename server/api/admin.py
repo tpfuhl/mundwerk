@@ -11,9 +11,14 @@ class LearnerProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ("text", "ipa", "level", "focus_segments")
-    list_filter = ("level",)
+    list_display = ("text", "ipa", "kind", "level", "focus_segments",
+                    "mfa_pron", "hat_varianten")
+    list_filter = ("kind", "level")
     search_fields = ("text", "ipa")
+
+    @admin.display(boolean=True, description="Fehlervarianten")
+    def hat_varianten(self, item):
+        return bool(item.variant_list())
 
 
 @admin.register(TargetSegment)

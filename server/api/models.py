@@ -3,14 +3,41 @@ from django.db import models
 
 
 class Item(models.Model):
-    """Ein Wort oder Satz zum Nachsprechen."""
+    """Ein isolierter Laut, ein Wort oder ein Satz zum Nachsprechen."""
+
+    KIND_CHOICES = [("laut", "laut"), ("wort", "wort"), ("satz", "satz")]
 
     text = models.CharField(max_length=200)
     ipa = models.CharField(max_length=200, help_text="IPA-Transkription")
     level = models.CharField(max_length=10, default="A1")  # A1..C2
+    # "laut" = isoliert gehaltener Laut (kein Alignment, Auto-Segmentierung),
+    # "wort"/"satz" = MFA-Alignment. PLAN „Segmentdiagnose“, Schritt 1.
+    kind = models.CharField(max_length=10, choices=KIND_CHOICES, default="wort")
     # Phone(s), auf denen der Übungsfokus liegt, z. B. ["øː"].
     # Phase 1: genau ein Langvokal pro Item.
     focus_segments = models.JSONField(default=list)
+    # Soll-Lautung in MFA-Phonen, leerzeichengetrennt ("f ʁ yː") — nur
+    # zusammen mit error_variants nötig (Fehlerhypothesen-Alignment).
+    mfa_pron = models.CharField(
+        max_length=200, blank=True, default="",
+        help_text="Soll-Lautung in MFA-Phonen, z. B. „f ʁ yː“")
+    # Typische Fehlaussprachen (Kirstens Fehlerhypothesen, gern
+    # L1-spezifisch). Einträge: "f l yː" oder
+    # {"pron": "f l yː", "hinweis": "Das ‚r‘ klang wie ‚l‘ — …"}.
+    error_variants = models.JSONField(
+        default=list, blank=True,
+        help_text='Liste von Fehlaussprachen, z. B. '
+                  '[{"pron": "f l yː", "hinweis": "…"}]')
+
+    def variant_list(self) -> list[tuple[str, str | None]]:
+        """error_variants normalisiert → [(pron, hinweis|None)]."""
+        out = []
+        for v in self.error_variants or []:
+            if isinstance(v, str) and v.strip():
+                out.append((" ".join(v.split()), None))
+            elif isinstance(v, dict) and v.get("pron", "").strip():
+                out.append((" ".join(v["pron"].split()), v.get("hinweis")))
+        return out
 
     def __str__(self):
         return f"{self.text} [{self.ipa}]"

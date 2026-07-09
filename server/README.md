@@ -34,7 +34,7 @@ Alle Endpoints außer `register` verlangen `Authorization: Token <key>`.
 ```
 POST /api/register/           {vorname, nachname, nickname, muttersprache}
                               → 201 {token, nickname}  (offen, Rate-Limit)
-GET  /api/items/?level=A1     Übungswörter
+GET  /api/items/?level=A1&kind=laut   Übungen (kind: laut|wort|satz)
 GET  /api/items/{id}/
 GET  /api/targets/?speaker=…  Referenzformanten (fürs Vokalviereck)
 GET  /api/profile/            Übungsstatistik pro Laut + Profildaten
@@ -56,6 +56,12 @@ curl -X POST http://127.0.0.1:8000/api/recordings/ \
 Antwort (`result.segments[]`): pro Fokus-Phone `f1/f2` (gemessen),
 `target_f1/f2`, `z_f1/z_f2`, `distanz`, `rating` (grün/gelb/rot),
 `feedback` (artikulatorische Hinweise), `start/end` (Segment in s).
+
+Bei Wort-Items mit Soll-Lautung (`mfa_pron`) zusätzlich
+`result.lautfolge`: `soll`/`ist` (Phonfolgen), `abweichungen`
+(`[{typ: ersetzt|fehlt|zuviel, position, soll, ist, text}]`, z. B.
+„/l/ statt /ʁ/ gesprochen“) und ggf. `hinweis` (kuratierter Text zur
+erkannten Fehlervariante).
 
 ## Anleitung für Kirsten (Kuratorin)
 
@@ -129,6 +135,23 @@ Excel/LibreOffice funktioniert direkt). Vorhandene Wörter (gleicher
 `data/beispiel_wortliste.csv`. Der Import warnt, wenn ein Fokus-Laut
 noch keine Referenzwerte (TargetSegment) hat.
 
+Optionale Spalten (Segmentdiagnose, siehe PLAN.md):
+
+- `kind` — `laut` (isoliert gehaltener Laut, Einstiegsübungen),
+  `wort` (Default) oder `satz`.
+- `pron` — Soll-Lautung in MFA-Phonen, leerzeichengetrennt: `f ʁ yː`.
+- `varianten` — typische Fehlaussprachen, durch `|` getrennt:
+  `f l yː | f k yː | f yː`. Die App aligniert dann gegen alle Varianten
+  und meldet z. B. „/l/ statt /ʁ/ gesprochen“. **Der didaktische
+  Hinweistext pro Variante wird im Admin gepflegt** (Api → Items →
+  Feld „Error variants“: `[{"pron": "f l yː", "hinweis": "…"}]`) und
+  überlebt einen erneuten CSV-Import.
+
+Fehlt eine optionale Spalte in der CSV, bleiben die im Admin gepflegten
+Werte unangetastet. Achtung: `pron`/`varianten` müssen Phone aus dem
+`german_mfa`-Phonset verwenden, sonst scheitert das Alignment und die
+App fällt auf die Auto-Segmentierung zurück (Warnung im Server-Log).
+
 Das Kommando läuft auf dem Server — Kirsten schickt ihre CSV einfach
 an Thomas, der sie einspielt (oder pflegt kleinere Änderungen selbst
 im Admin).
@@ -139,8 +162,14 @@ im Admin).
   conda-Env `mfa`, Modelle `german_mfa`). Liefert das Alignment den
   Fokus-Laut nicht (oder ist MFA aus), greift die Auto-Segmentierung
   (längster stimmhafter Abschnitt); `result.segments[].segmentierung`
-  sagt, welcher Weg es war. Aufnahme+Analyse dauern damit ~8 s —
+  sagt, welcher Weg es war. Items mit `kind=laut` (isolierte Laute)
+  überspringen MFA bewusst. Aufnahme+Analyse dauern damit ~8 s —
   wenn das stört: Celery-Task (POST → 202 + Polling).
+- **Fehlerhypothesen-Alignment:** Hat ein Item `mfa_pron` +
+  `error_variants`, wählt MFA die akustisch beste Aussprachevariante;
+  `result.lautfolge` enthält dann Soll/Ist-Lautfolge, benannte
+  Abweichungen („/l/ statt /ʁ/ gesprochen“) und Kirstens Hinweis zur
+  erkannten Variante. Arbeitsbeispiel: Seed-Item „früh“.
 - **Sprechernormalisierung:** nur male/female/child-Tabellen; Lobanov-
   Kalibrierung beim Onboarding kommt in Phase 1.
 - **Auth:** Token-Pflicht auf allen Endpoints

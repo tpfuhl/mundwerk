@@ -202,6 +202,12 @@ Warum das heutige System die beiden Fälle so behandelt:
   Abschnitt) wandert das stimmhafte /l/ sogar direkt in die
   Vokalmessung → fälschlich rot, und der wahre Fehler bleibt unbenannt.
 
+*Stand: Schritt 1 + 2 sind serverseitig umgesetzt (Item-Felder `kind`,
+`mfa_pron`, `error_variants`; Varianten-Lexikon in `analysis/alignment.py`;
+`result.lautfolge` mit benannten Abweichungen; Seeds: 7 Laut-Items +
+„früh“ mit Fehlervarianten). Es fehlen: App-UI (Laut-Übungen anbieten,
+`lautfolge`/Hinweis anzeigen) und Schritt 3 + 4.*
+
 ### Schritt 1 — Isolierte Laute als eigener Übungstyp (didaktisch, sofort)
 Neuer Item-Typ „Laut“ (isolierte Vokale, später haltbare Konsonanten
 /s ʃ ç x f v l m n ŋ/): Der Lernende klärt zuerst, welche Laute er kann

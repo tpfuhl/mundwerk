@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from analysis.alignment import AlignmentError, align
+from analysis.alignment import AlignmentError, align, diff_phones
 from analysis.pipeline import AnalysisError, analyze_recording
 
 from .models import Item, LearnerProfile, Recording, TargetSegment
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class ItemViewSet(viewsets.ReadOnlyModelViewSet):
-    """GET /api/items/?level=A1 und GET /api/items/{id}/"""
+    """GET /api/items/?level=A1&kind=laut und GET /api/items/{id}/"""
 
     serializer_class = ItemSerializer
 
@@ -31,6 +31,9 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
         level = self.request.query_params.get("level")
         if level:
             qs = qs.filter(level=level)
+        kind = self.request.query_params.get("kind")
+        if kind:
+            qs = qs.filter(kind=kind)
         return qs
 
 
@@ -86,37 +89,70 @@ class RecordingViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin,
 
     @staticmethod
     def _align(recording):
-        """Phon-Segmente per MFA; {} wenn MFA aus ist oder scheitert
-        (dann greift die Auto-Segmentierung der Pipeline)."""
-        if not settings.MFA_BIN:
-            return {}
+        """Phon-Segmente per MFA → [(phone, start, end)]; [] wenn MFA aus
+        ist, das Item ein isolierter Laut ist oder das Alignment scheitert
+        (dann greift die Auto-Segmentierung der Pipeline).
+
+        Hat das Item eine Soll-Lautung (mfa_pron), wird gegen ein Lexikon
+        aus Soll-Lautung + Fehlervarianten aligniert — MFA wählt die
+        akustisch beste, die Abweichung benennt dann _analyze."""
+        item = recording.item
+        if not settings.MFA_BIN or item.kind == "laut":
+            return []
+        prons = None
+        # Varianten-Lexikon nur für Einzelwörter — bei Sätzen enthielte
+        # es nur ein Wort und das Alignment schlüge fehl.
+        if item.mfa_pron and item.kind == "wort":
+            prons = [item.mfa_pron] + [p for p, _ in item.variant_list()]
         try:
-            aligned = align(recording.audio.path, recording.item.text,
-                            settings.MFA_BIN, timeout=settings.MFA_TIMEOUT)
+            return align(recording.audio.path, item.text, settings.MFA_BIN,
+                         timeout=settings.MFA_TIMEOUT, prons=prons)
         except AlignmentError as e:
             logger.warning("Alignment-Fallback für Recording %s: %s",
                            recording.pk, e)
-            return {}
-        by_phone = {}
-        for phone, start, end in aligned:
-            by_phone.setdefault(phone, (start, end))  # erstes Vorkommen
-        return by_phone
+            return []
+
+    @staticmethod
+    def _lautfolge(item, aligned):
+        """Soll/Ist-Lautfolge + benannte Abweichungen fürs Ergebnis-JSON;
+        None ohne Soll-Lautung, ohne Alignment oder für Nicht-Wort-Items
+        (dort wurde gegen das Standard-Lexikon aligniert, nicht gegen
+        die Varianten)."""
+        if not aligned or not item.mfa_pron or item.kind != "wort":
+            return None
+        soll = item.mfa_pron.split()
+        ist = [phone for phone, _, _ in aligned]
+        abweichungen = diff_phones(soll, ist)
+        out = {"soll": soll, "ist": ist, "abweichungen": abweichungen}
+        if abweichungen:
+            # Kirstens didaktischer Hinweis zur erkannten Fehlervariante
+            for pron, hinweis in item.variant_list():
+                if pron.split() == ist and hinweis:
+                    out["hinweis"] = hinweis
+                    break
+        return out
 
     @classmethod
     def _analyze(cls, recording):
         results = []
         try:
             aligned = cls._align(recording)
+            by_phone = {}
+            for phone, start, end in aligned:
+                by_phone.setdefault(phone, (start, end))  # erstes Vorkommen
             for phone in recording.item.focus_segments:
                 target = TargetSegment.objects.filter(
                     phone=phone, speaker=recording.speaker).first()
                 result = analyze_recording(
                     recording.audio.path, phone, recording.speaker,
                     target=target.as_tuple() if target else None,
-                    segment=aligned.get(phone))
-                result["segmentierung"] = "mfa" if phone in aligned else "auto"
+                    segment=by_phone.get(phone))
+                result["segmentierung"] = "mfa" if phone in by_phone else "auto"
                 results.append(result)
             recording.result = {"segments": results}
+            lautfolge = cls._lautfolge(recording.item, aligned)
+            if lautfolge:
+                recording.result["lautfolge"] = lautfolge
             recording.status = "done"
         except AnalysisError as e:
             recording.result = {"error": str(e)}
