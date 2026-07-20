@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Ergebnis #{{ recording.pk }} – Mundwerk Testkonsole</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 700px; margin: 2rem auto; padding: 0 1rem; }
+        a { color: #06c; }
+        table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+        td, th { border: 1px solid #ddd; padding: .4rem .6rem; text-align: left; font-size: .9rem; }
+        .rating-grün { color: #080; font-weight: 600; }
+        .rating-gelb { color: #a70; font-weight: 600; }
+        .rating-rot  { color: #c00; font-weight: 600; }
+        pre { background: #f5f5f5; padding: 1rem; overflow-x: auto; font-size: .8rem; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <p><a href="{% url 'dev-console' %}">← zurück zur Testkonsole</a></p>
+    <h1>Recording #{{ recording.pk }} — {{ recording.item.text }}</h1>
+    <p>Status: <strong>{{ recording.status }}</strong> · Sprecher: {{ recording.speaker }}</p>
+
+    {% if recording.result.error %}
+        <div style="color:#c00;">Fehler: {{ recording.result.error }}</div>
+    {% endif %}
+
+    {% if recording.result.segments %}
+    <table>
+        <tr><th>Phon</th><th>F1</th><th>F2</th><th>Ziel F1/F2</th><th>z (F1/F2)</th><th>Rating</th><th>Feedback</th><th>Segm.</th></tr>
+        {% for seg in recording.result.segments %}
+        <tr>
+            <td>/{{ seg.phone }}/</td>
+            <td>{{ seg.f1 }}</td>
+            <td>{{ seg.f2 }}</td>
+            <td>{{ seg.target_f1|default:"–" }} / {{ seg.target_f2|default:"–" }}</td>
+            <td>{{ seg.z_f1|default:"–" }} / {{ seg.z_f2|default:"–" }}</td>
+            <td class="rating-{{ seg.rating }}">{{ seg.rating|default:"–" }}</td>
+            <td>{{ seg.feedback|join:" / " }}</td>
+            <td>{{ seg.segmentierung }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    {% if recording.result.lautfolge %}
+    <h2>Lautfolge</h2>
+    <p>Soll: {{ recording.result.lautfolge.soll|join:" " }}<br>
+       Ist:&nbsp; {{ recording.result.lautfolge.ist|join:" " }}</p>
+    {% if recording.result.lautfolge.hinweis %}<p><em>{{ recording.result.lautfolge.hinweis }}</em></p>{% endif %}
+    {% endif %}
+
+    <h2>Rohes JSON</h2>
+    <pre>{{ recording.result|pprint }}</pre>
+</body>
+</html>

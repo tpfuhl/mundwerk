@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Mundwerk – Testkonsole</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+        h1 { font-size: 1.3rem; }
+        label { display: block; margin-top: 1rem; font-weight: 600; }
+        select, input[type=file] { width: 100%; padding: .4rem; margin-top: .25rem; box-sizing: border-box; }
+        button { margin-top: 1.5rem; padding: .6rem 1.2rem; }
+        .meta { color: #666; font-size: .85rem; }
+        table { border-collapse: collapse; width: 100%; margin-top: 1.5rem; }
+        td, th { border: 1px solid #ddd; padding: .4rem .6rem; text-align: left; font-size: .9rem; }
+        .msg { padding: .6rem; background: #fee; border: 1px solid #c00; margin-top: 1rem; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>🎙 Mundwerk – Testkonsole</h1>
+    <p class="meta">Interner Dev-Endpoint (nur bei DEBUG=True) — angemeldet als {{ user.username }}</p>
+
+    {% for message in messages %}<div class="msg">{{ message }}</div>{% endfor %}
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <label for="item_id">Item</label>
+        <select name="item_id" id="item_id" required>
+            {% for item in items %}
+                <option value="{{ item.id }}">
+                    [{{ item.level }}/{{ item.kind }}] {{ item.text }} ({{ item.ipa }}){% if item.focus_segments %} — Fokus: {{ item.focus_segments }}{% endif %}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label for="speaker">Sprechergruppe</label>
+        <select name="speaker" id="speaker">
+            {% for value, label in speakers %}
+                <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="audio">Audiodatei (WAV empfohlen)</label>
+        <input type="file" name="audio" id="audio" accept="audio/*" required>
+
+        <button type="submit">Analysieren</button>
+    </form>
+
+    {% if recent %}
+    <h2 style="margin-top:2rem;">Letzte Testläufe</h2>
+    <table>
+        <tr><th>#</th><th>Item</th><th>Status</th><th>Zeit</th></tr>
+        {% for r in recent %}
+        <tr>
+            <td><a href="{% url 'dev-result' r.pk %}">{{ r.pk }}</a></td>
+            <td>{{ r.item.text }}</td>
+            <td>{{ r.status }}</td>
+            <td>{{ r.created_at|date:"d.m. H:i" }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+</body>
+</html>
