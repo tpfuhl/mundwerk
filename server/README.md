@@ -27,6 +27,52 @@ python3 -m venv .venv
 Admin-Zugang (zum Kuratieren der Referenzwerte und Items):
 `.venv/bin/python manage.py createsuperuser`, dann http://127.0.0.1:8000/admin/
 
+## Testkonsole (`/dev/`)
+
+Zum schnellen Testen neuer Features ohne Android-App und ohne API-Token:
+Item wählen, Audio hochladen, Ergebnis sehen. Läuft über exakt dieselbe
+Pipeline wie die App (`RecordingViewSet._analyze` in `api/views.py`),
+keine Parallel-Logik — hier getestete Änderungen gelten 1:1 fürs Handy.
+Code: `api/dev_views.py`, `api/dev_urls.py`, `api/templates/dev/`.
+
+**Voraussetzung:** `DEBUG=True` (unter `DEBUG=0` — Produktion — existiert
+die Route gar nicht erst, siehe `config/urls.py`) und ein Login mit
+`is_staff=True` (`manage.py createsuperuser`, falls noch keiner existiert
+— getrennt von den passwortlosen App-Accounts aus `/api/register/`).
+
+**Lokal:**
+
+```bash
+.venv/bin/python manage.py runserver
+```
+
+→ http://127.0.0.1:8000/dev/ (vorher unter `/admin/login/` einloggen).
+Ohne MFA-Installation läuft die Analyse auf dem lokalen Rechner über die
+Auto-Segmentierung (Fallback).
+
+**Gegen den echten Server**, um mit der echten MFA-Installation statt der
+Auto-Segmentierung zu testen — Apache bleibt dabei unberührt, `DEBUG`
+wird nur für diesen einen Aufruf überschrieben, die produktive `.env`
+bleibt bei `DEBUG=0`:
+
+```bash
+# auf dem Server, als thomas (nicht root — sonst gehören neue Dateien root):
+cd /home/thomas/mundwerk/server
+DJANGO_DEBUG=1 .venv/bin/python manage.py runserver 127.0.0.1:8000
+```
+
+```bash
+# vom Laptop aus, zweites Terminal:
+ssh -L 8000:127.0.0.1:8000 thomas@proportiodivina.eu
+```
+
+→ http://127.0.0.1:8000/dev/ im eigenen Browser. `runserver` bindet nur
+an `localhost`, ist von außen also nicht erreichbar. Nach dem Test mit
+`Strg+C` beenden — Apache/mod_wsgi läuft die ganze Zeit unbeeinflusst
+mit `DEBUG=0` weiter, denselben `db.sqlite3`/`media/` benutzen beide
+Prozesse aber gemeinsam (SQLite verträgt kurze parallele Tests, aber
+nicht als Dauerzustand neben echtem Nutzerverkehr).
+
 ## API
 
 Alle Endpoints außer `register` verlangen `Authorization: Token <key>`.
